@@ -1,6 +1,7 @@
 'use strict';
 
 const peiState = window.DMO_PEI || {};
+const meteoState = window.DMO_METEO || {};
 
 function byId(id) {
   return document.getElementById(id);
@@ -18,7 +19,7 @@ function escapeHtml(value) {
 function statusText(id, message, ok) {
   const el = byId(id);
   if (!el) return;
-  el.textContent = message || '';
+  el.textContent = window.SVX_I18N ? window.SVX_I18N.t(message || '') : (message || '');
   el.classList.toggle('ok', !!ok);
   el.classList.toggle('error', !!message && !ok);
 }
@@ -42,9 +43,9 @@ function renderPeiLog(log) {
   const body = byId('pei-log-body');
   if (!body) return;
   const items = Array.isArray(log) ? log : [];
-  byId('pei-log-count').textContent = String(items.length) + ' entradas';
+  byId('pei-log-count').textContent = window.SVX_I18N ? window.SVX_I18N.t(String(items.length) + ' entradas') : String(items.length) + ' entradas';
   if (!items.length) {
-    body.innerHTML = '<tr><td colspan="4" class="empty">Ainda não foram enviados comandos PEI pelo painel</td></tr>';
+    body.innerHTML = '<tr><td colspan="4" class="empty">' + escapeHtml(window.SVX_I18N ? window.SVX_I18N.t('Ainda não foram enviados comandos PEI pelo painel') : 'Ainda não foram enviados comandos PEI pelo painel') + '</td></tr>';
     return;
   }
   body.innerHTML = items.map((entry) => {
@@ -132,10 +133,90 @@ function bindPasswordForm() {
   });
 }
 
+function bindServerConfigForm() {
+  const form = byId('server-config-form');
+  if (!form) return;
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    statusText('server-config-status', 'A guardar configuração...', true);
+    try {
+      await postApi('server_config', {
+        callsign: byId('config-callsign').value,
+        tetra_mode: byId('config-tetra-mode').value,
+        gssi: byId('config-gssi').value,
+        default_tg: byId('config-default-tg').value,
+        monitor_tgs: byId('config-monitor-tgs').value,
+        modules: byId('config-modules').value,
+        dtmf_commands: byId('config-dtmf-commands').value
+      });
+      statusText('server-config-status', 'Configuração guardada. Reinicia o SvxLink quando quiseres aplicar alterações de arranque.', true);
+    } catch (err) {
+      statusText('server-config-status', err.message, false);
+    }
+  });
+}
+
+function filterMeteoLocations() {
+  const search = byId('meteo-location-search');
+  const select = byId('meteo-location');
+  if (!search || !select) return;
+  const query = search.value.trim().toLowerCase();
+  Array.from(select.options).forEach((option) => {
+    option.hidden = query !== '' && !option.textContent.toLowerCase().includes(query);
+  });
+}
+
+function bindMeteoForm() {
+  const search = byId('meteo-location-search');
+  if (search) search.addEventListener('input', filterMeteoLocations);
+
+  const form = byId('meteo-form');
+  if (!form) return;
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    statusText('meteo-status', 'A guardar avisos...', true);
+    try {
+      await postApi('meteo_save', {
+        enabled: byId('meteo-enabled').checked,
+        interval_minutes: Number(byId('meteo-interval').value),
+        location_id: byId('meteo-location').value
+      });
+      statusText('meteo-status', 'Avisos meteorológicos guardados.', true);
+    } catch (err) {
+      statusText('meteo-status', err.message, false);
+    }
+  });
+}
+
+function bindMaintenanceButtons() {
+  document.querySelectorAll('.maintenance-action').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const action = button.dataset.action || '';
+      const statusId = action === 'meteo-now' ? 'meteo-status' : 'maintenance-status';
+      const risky = action === 'restart-system' || action === 'apt-upgrade';
+      if (risky && !window.confirm('Confirmas esta acção?')) return;
+      statusText(statusId, 'A executar...', true);
+      try {
+        await postApi('maintenance_action', { maintenance_action: action });
+        statusText(statusId, 'Acção executada.', true);
+      } catch (err) {
+        statusText(statusId, err.message, false);
+      }
+    });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   bindPresetButtons();
   bindCommandForm();
   bindPowerForm();
   bindPasswordForm();
+  bindServerConfigForm();
+  bindMeteoForm();
+  bindMaintenanceButtons();
   renderPeiLog(peiState.log || []);
+  if (meteoState && meteoState.config && meteoState.config.location_id) {
+    const select = byId('meteo-location');
+    if (select) select.value = meteoState.config.location_id;
+  }
 });

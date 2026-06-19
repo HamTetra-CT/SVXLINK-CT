@@ -5,7 +5,8 @@ function applyTheme(theme) {
   document.documentElement.dataset.theme = selected;
   const button = document.getElementById('theme-toggle');
   if (button) {
-    button.textContent = selected === 'light' ? 'Modo noite' : 'Modo dia';
+    const label = selected === 'light' ? 'Modo noite' : 'Modo dia';
+    button.textContent = window.SVX_I18N ? window.SVX_I18N.t(label) : label;
   }
 }
 

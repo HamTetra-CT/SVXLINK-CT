@@ -35,7 +35,7 @@ $latestEvent = $data['events'] ? $data['events'][count($data['events']) - 1] : n
       <a href="sds.php">SDS</a>
       <a href="admin.php">Administração</a>
       <a href="logs.php">Registos</a>
-      <a href="#hardware">Hardware</a>
+      <a href="#hardware">Equipamento</a>
       <select class="language-select" id="language-select" aria-label="Idioma">
         <option value="pt">PT</option>
         <option value="en">EN</option>
@@ -78,9 +78,10 @@ $latestEvent = $data['events'] ? $data['events'][count($data['events']) - 1] : n
 
     <section class="grid quick-grid" id="hardware">
       <article class="card health-card">
-        <div class="panel-title">Saúde Raspberry/NUC</div>
+        <div class="panel-title panel-bar">Estado do equipamento</div>
         <div class="meter"><span>Carga</span><strong id="hardware-load"><?php echo h($hardware['load']); ?></strong></div>
         <div class="meter"><span>Temp. CPU</span><strong id="hardware-temp"><?php echo h($hardware['temp']); ?></strong></div>
+        <div class="meter"><span>RAM</span><strong id="memory-main"><?php echo h($hardware['memory']['label']); ?></strong></div>
         <div class="meter-bar"><span id="memory-bar" style="width: <?php echo (int)$hardware['memory']['percent']; ?>%"></span></div>
         <div class="meter-caption">Memória <span id="memory-label"><?php echo h($hardware['memory']['label']); ?></span></div>
         <div class="meter-bar disk"><span id="disk-bar" style="width: <?php echo (int)$hardware['disk_percent']; ?>%"></span></div>

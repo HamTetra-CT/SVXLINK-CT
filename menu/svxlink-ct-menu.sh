@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPO_DIR="${SVXLINK_CT_DIR:-/opt/svxlink-ct}"
 USERS_UPDATE="${USERS_UPDATE:-/usr/local/sbin/svxlink-ct-update-users}"
+ACTION_HELPER="${ACTION_HELPER:-/usr/local/sbin/svxlink-ct-dashboard-action}"
 
 need_whiptail() {
   if ! command -v whiptail >/dev/null 2>&1; then
@@ -48,6 +49,16 @@ install_voices() {
   run_in_shell "Instalar vozes pt_PT" sudo bash "${REPO_DIR}/install/install-pt-voices.sh"
 }
 
+run_action_helper() {
+  local label="$1"
+  local action="$2"
+  if [ ! -x "${ACTION_HELPER}" ]; then
+    msg "Helper de manutenção não encontrado: ${ACTION_HELPER}"
+    return
+  fi
+  run_in_shell "${label}" sudo "${ACTION_HELPER}" "${action}"
+}
+
 open_file() {
   local file="$1"
   if [ ! -e "${file}" ]; then
@@ -85,7 +96,7 @@ view_svxlink_log() {
 need_whiptail
 
 while true; do
-  choice=$(whiptail --title "SVXLINK-CT Maintenance" --menu "Escolhe uma opcao:" 24 86 13 \
+  choice=$(whiptail --title "SVXLINK-CT Maintenance" --menu "Escolhe uma opcao:" 28 88 16 \
     1 "Ver estado do sistema" \
     2 "Ver logs SvxLink" \
     3 "Atualizar SVXLINK-CT repo" \
@@ -98,7 +109,10 @@ while true; do
     10 "Abrir alsamixer" \
     11 "Reiniciar SvxLink manualmente" \
     12 "Reboot do sistema" \
-    13 "Sair" 3>&1 1>&2 2>&3) || break
+    13 "Actualizar lista apt" \
+    14 "Actualizar pacotes apt" \
+    15 "Gerar aviso meteorológico agora" \
+    16 "Sair" 3>&1 1>&2 2>&3) || break
 
   case "${choice}" in
     1) run_in_shell "Estado do sistema" bash "${REPO_DIR}/install/check-dmo-system.sh" ;;
@@ -113,16 +127,22 @@ while true; do
     10) sudo alsamixer ;;
     11)
       if confirm "Reiniciar SvxLink agora? Isto cria uma pequena quebra de servico."; then
-        sudo systemctl restart svxlink
-        msg "SvxLink reiniciado."
+        run_action_helper "Reiniciar SvxLink" restart-svxlink
       fi
       ;;
     12)
       if confirm "Reiniciar o sistema agora?"; then
-        sudo reboot
+        run_action_helper "Reboot do sistema" restart-system
       fi
       ;;
-    13) break ;;
+    13) run_action_helper "Actualizar lista apt" apt-update ;;
+    14)
+      if confirm "Actualizar pacotes apt agora?"; then
+        run_action_helper "Actualizar pacotes apt" apt-upgrade
+      fi
+      ;;
+    15) run_action_helper "Gerar aviso meteorológico agora" meteo-now ;;
+    16) break ;;
   esac
 done
 

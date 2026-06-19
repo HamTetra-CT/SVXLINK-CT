@@ -8,6 +8,7 @@ WEB_ROOT="${WEB_ROOT:-/var/www/html}"
 INSTALL_VOICES="${INSTALL_VOICES:-1}"
 INSTALL_DASHBOARD="${INSTALL_DASHBOARD:-1}"
 INSTALL_MENU="${INSTALL_MENU:-1}"
+INSTALL_METEO="${INSTALL_METEO:-1}"
 UPDATE_USERS_NOW="${UPDATE_USERS_NOW:-1}"
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -49,6 +50,10 @@ if [ "${INSTALL_VOICES}" = "1" ]; then
   bash "${TARGET_DIR}/install/install-pt-voices.sh"
 fi
 
+if [ "${INSTALL_METEO}" = "1" ]; then
+  bash "${TARGET_DIR}/install/install-meteo-alerts.sh"
+fi
+
 if [ "${UPDATE_USERS_NOW}" = "1" ]; then
   /usr/local/sbin/svxlink-ct-update-users --quiet || true
 fi
@@ -58,3 +63,4 @@ echo "Instalação/actualização SVXLINK-CT concluída."
 echo "Painel: http://$(hostname -I 2>/dev/null | awk '{print $1}')/"
 echo "Menu: sudo svxlink-ct"
 echo "Actualização diária de utilizadores: 04:00 via /etc/cron.d/svxlink-ct-users-update"
+echo "Avisos meteorológicos: configurar em Administração depois de copiar /home/pi/chave.json"

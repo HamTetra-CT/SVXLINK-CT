@@ -45,7 +45,7 @@ function log_filter_label(string $type): string
         'pei' => 'PEI',
         'rssi' => 'RSSI',
         'reg' => 'REGISTO',
-        'reflector' => 'REFLECTOR',
+        'reflector' => 'REFLETOR',
         'warn' => 'ALERTAS',
         'system' => 'SISTEMA',
     ][$type] ?? strtoupper($type);
@@ -75,8 +75,8 @@ function require_dashboard_admin(): void
         return;
     }
 
-    header('WWW-Authenticate: Basic realm="SVXLINK-CT Dashboard"');
-    header('HTTP/1.1 401 Unauthorized');
+    header('WWW-Authenticate: Basic realm="SVXLINK-CT Painel"');
+    http_response_code(401);
     echo 'Autenticação necessária';
     exit;
 }
@@ -380,10 +380,31 @@ function default_sds_presets(): array
         ],
         [
             'id' => 'servico-online',
-            'label' => 'Servico online',
+            'label' => 'Serviço online',
             'destination' => '',
             'type' => 'T',
-            'message' => 'CT-DMO online',
+            'message' => DASH_SITE . ' online',
+        ],
+        [
+            'id' => 'metarinfo',
+            'label' => 'MetarInfo',
+            'destination' => '',
+            'type' => 'T',
+            'message' => '99',
+        ],
+        [
+            'id' => 'parrot-on',
+            'label' => 'Parrot ON',
+            'destination' => '',
+            'type' => 'T',
+            'message' => '91',
+        ],
+        [
+            'id' => 'parrot-off',
+            'label' => 'Parrot OFF',
+            'destination' => '',
+            'type' => 'T',
+            'message' => '90',
         ],
     ];
 }
@@ -602,17 +623,392 @@ function format_power(float $watts): string
 
 function radio_power_levels(): array
 {
-    $dbmLevels = [10, 13, 17, 20, 23, 27, 30, 33, 35, 37, 40, 43];
-    $levels = [];
-    foreach ($dbmLevels as $dbm) {
-        $watts = dbm_to_watts((float)$dbm);
-        $levels[] = [
-            'dbm' => $dbm,
-            'watts' => round($watts, 4),
-            'label' => $dbm . ' dBm / ' . format_power($watts),
+    return [
+        ['dbm' => 27.5, 'watts' => 0.56, 'label' => '27.5 dBm / 560 mW'],
+        ['dbm' => 30.0, 'watts' => 1.0, 'label' => '30.0 dBm / 1.0 W'],
+        ['dbm' => 32.5, 'watts' => 1.8, 'label' => '32.5 dBm / 1.8 W'],
+        ['dbm' => 35.0, 'watts' => 3.0, 'label' => '35.0 dBm / 3.0 W'],
+        ['dbm' => 37.5, 'watts' => 5.6, 'label' => '37.5 dBm / 5.6 W'],
+        ['dbm' => 40.0, 'watts' => 10.0, 'label' => '40.0 dBm / 10.0 W'],
+    ];
+}
+
+function meteo_intervals(): array
+{
+    $minutes = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720, 1440];
+    $items = [];
+    foreach ($minutes as $value) {
+        if ($value === 1440) {
+            $label = '1x ao dia';
+        } elseif ($value >= 60) {
+            $hours = intdiv($value, 60);
+            $label = $hours === 1 ? '1 hora' : $hours . ' horas';
+        } else {
+            $label = $value . ' minutos';
+        }
+        $items[] = ['value' => $value, 'label' => $label];
+    }
+    return $items;
+}
+
+function meteo_locations(): array
+{
+    return [
+        ['id' => 'AVE', 'label' => 'Aveiro', 'area' => 'AVE', 'area_label' => 'Aveiro'],
+        ['id' => 'BEJ', 'label' => 'Beja', 'area' => 'BEJ', 'area_label' => 'Beja'],
+        ['id' => 'BRA', 'label' => 'Braga', 'area' => 'BRA', 'area_label' => 'Braga'],
+        ['id' => 'BGC', 'label' => 'Bragança', 'area' => 'BGC', 'area_label' => 'Bragança'],
+        ['id' => 'CBR', 'label' => 'Castelo Branco', 'area' => 'CBR', 'area_label' => 'Castelo Branco'],
+        ['id' => 'COI', 'label' => 'Coimbra', 'area' => 'COI', 'area_label' => 'Coimbra'],
+        ['id' => 'EVO', 'label' => 'Évora', 'area' => 'EVO', 'area_label' => 'Évora'],
+        ['id' => 'FAR', 'label' => 'Faro', 'area' => 'FAR', 'area_label' => 'Faro'],
+        ['id' => 'GUA', 'label' => 'Guarda', 'area' => 'GUA', 'area_label' => 'Guarda'],
+        ['id' => 'LEI', 'label' => 'Leiria', 'area' => 'LEI', 'area_label' => 'Leiria'],
+        ['id' => 'LSB', 'label' => 'Lisboa', 'area' => 'LSB', 'area_label' => 'Lisboa'],
+        ['id' => 'PTG', 'label' => 'Portalegre', 'area' => 'PTG', 'area_label' => 'Portalegre'],
+        ['id' => 'POR', 'label' => 'Porto', 'area' => 'POR', 'area_label' => 'Porto'],
+        ['id' => 'STR', 'label' => 'Santarém', 'area' => 'STR', 'area_label' => 'Santarém'],
+        ['id' => 'SET', 'label' => 'Setúbal', 'area' => 'SET', 'area_label' => 'Setúbal'],
+        ['id' => 'VCT', 'label' => 'Viana do Castelo', 'area' => 'VCT', 'area_label' => 'Viana do Castelo'],
+        ['id' => 'VRL', 'label' => 'Vila Real', 'area' => 'VRL', 'area_label' => 'Vila Real'],
+        ['id' => 'VIS', 'label' => 'Viseu', 'area' => 'VIS', 'area_label' => 'Viseu'],
+        ['id' => 'MAD', 'label' => 'Madeira', 'area' => 'MAD', 'area_label' => 'Madeira'],
+        ['id' => 'PXO', 'label' => 'Porto Santo', 'area' => 'PXO', 'area_label' => 'Porto Santo'],
+        ['id' => 'SMA', 'label' => 'Santa Maria', 'area' => 'SMA', 'area_label' => 'Santa Maria'],
+        ['id' => 'TER', 'label' => 'Terceira', 'area' => 'TER', 'area_label' => 'Terceira'],
+        ['id' => 'GRA', 'label' => 'Graciosa', 'area' => 'GRA', 'area_label' => 'Graciosa'],
+        ['id' => 'SJG', 'label' => 'São Jorge', 'area' => 'SJG', 'area_label' => 'São Jorge'],
+        ['id' => 'PIC', 'label' => 'Pico', 'area' => 'PIC', 'area_label' => 'Pico'],
+        ['id' => 'FAI', 'label' => 'Faial', 'area' => 'FAI', 'area_label' => 'Faial'],
+        ['id' => 'FLO', 'label' => 'Flores', 'area' => 'FLO', 'area_label' => 'Flores'],
+        ['id' => 'COR', 'label' => 'Corvo', 'area' => 'COR', 'area_label' => 'Corvo'],
+    ];
+}
+
+function default_meteo_config(): array
+{
+    return [
+        'enabled' => false,
+        'interval_minutes' => 60,
+        'location_id' => 'LSB',
+        'location_label' => 'Lisboa',
+        'area' => 'LSB',
+        'area_label' => 'Lisboa',
+        'credentials' => DASH_METEO_CREDENTIALS,
+        'output_wav' => DASH_METEO_OUTPUT_WAV,
+        'dtmf_pty' => DASH_METEO_DTMF_PTY,
+        'dtmf_command' => '99#',
+        'trigger_dtmf' => true,
+        'api_url' => 'https://api.ipma.pt/open-data/forecast/warnings/warnings_www.json',
+    ];
+}
+
+function find_meteo_location(string $id): ?array
+{
+    foreach (meteo_locations() as $location) {
+        if ($location['id'] === $id) {
+            return $location;
+        }
+    }
+    return null;
+}
+
+function load_meteo_config(): array
+{
+    $config = default_meteo_config();
+    $stored = read_json_array(DASH_METEO_CONFIG_FILE);
+    if ($stored) {
+        $config = array_replace($config, $stored);
+    }
+    $location = find_meteo_location((string)($config['location_id'] ?? ''));
+    if (!$location) {
+        $location = find_meteo_location('LSB');
+        $config['location_id'] = 'LSB';
+    }
+    if ($location) {
+        $config['location_label'] = $location['label'];
+        $config['area'] = $location['area'];
+        $config['area_label'] = $location['area_label'];
+    }
+    $config['interval_minutes'] = (int)($config['interval_minutes'] ?? 60);
+    $config['enabled'] = (bool)($config['enabled'] ?? false);
+    $config['trigger_dtmf'] = (bool)($config['trigger_dtmf'] ?? true);
+    return $config;
+}
+
+function save_meteo_config(array $input): array
+{
+    $interval = (int)($input['interval_minutes'] ?? 60);
+    $allowed = array_column(meteo_intervals(), 'value');
+    if (!in_array($interval, $allowed, true)) {
+        throw new InvalidArgumentException('Intervalo de avisos inválido.');
+    }
+
+    $location = find_meteo_location((string)($input['location_id'] ?? ''));
+    if (!$location) {
+        throw new InvalidArgumentException('Distrito dos avisos inválido.');
+    }
+
+    $current = load_meteo_config();
+    $config = array_replace($current, [
+        'enabled' => !empty($input['enabled']),
+        'interval_minutes' => $interval,
+        'location_id' => $location['id'],
+        'location_label' => $location['label'],
+        'area' => $location['area'],
+        'area_label' => $location['area_label'],
+        'credentials' => DASH_METEO_CREDENTIALS,
+        'output_wav' => DASH_METEO_OUTPUT_WAV,
+        'dtmf_pty' => DASH_METEO_DTMF_PTY,
+        'dtmf_command' => '99#',
+        'trigger_dtmf' => true,
+    ]);
+
+    if (!write_json_file(DASH_METEO_CONFIG_FILE, $config)) {
+        throw new RuntimeException('Não foi possível gravar a configuração dos avisos.');
+    }
+
+    return $config;
+}
+
+function meteo_dashboard_state(): array
+{
+    $config = load_meteo_config();
+    $state = read_json_array(DASH_METEO_STATE_FILE);
+    $outputDir = dirname((string)$config['output_wav']);
+
+    return [
+        'admin_configured' => dashboard_admin_configured(),
+        'admin_authenticated' => dashboard_admin_authenticated(),
+        'config' => $config,
+        'intervals' => meteo_intervals(),
+        'locations' => meteo_locations(),
+        'runner' => DASH_METEO_RUNNER,
+        'runner_ready' => is_executable(DASH_METEO_RUNNER),
+        'credentials_ready' => is_readable((string)$config['credentials']),
+        'output_dir_ready' => is_dir($outputDir) && is_writable($outputDir),
+        'state_file' => DASH_METEO_STATE_FILE,
+        'last_state' => $state,
+    ];
+}
+
+function set_config_section_keys(string $path, string $section, array $changes): void
+{
+    if (!is_readable($path)) {
+        throw new RuntimeException('Não foi possível ler ' . $path . '.');
+    }
+    if (!is_writable($path)) {
+        throw new RuntimeException('Sem permissões de escrita em ' . $path . '.');
+    }
+
+    $lines = file($path, FILE_IGNORE_NEW_LINES);
+    if ($lines === false) {
+        throw new RuntimeException('Não foi possível abrir ' . $path . '.');
+    }
+
+    $foundSection = false;
+    $inside = false;
+    $seen = [];
+    $out = [];
+
+    foreach ($lines as $line) {
+        $trim = trim($line);
+        if ($trim !== '' && $trim[0] === '[' && substr($trim, -1) === ']') {
+            if ($inside) {
+                foreach ($changes as $key => $value) {
+                    if (!isset($seen[$key])) {
+                        $out[] = $key . '=' . $value;
+                    }
+                }
+            }
+            $inside = trim($trim, '[]') === $section;
+            $foundSection = $foundSection || $inside;
+            $out[] = $line;
+            continue;
+        }
+
+        if ($inside && preg_match('/^\s*([A-Za-z0-9_]+)\s*=/', $line, $m)) {
+            $key = $m[1];
+            if (array_key_exists($key, $changes)) {
+                $out[] = $key . '=' . $changes[$key];
+                $seen[$key] = true;
+                continue;
+            }
+        }
+        $out[] = $line;
+    }
+
+    if ($inside) {
+        foreach ($changes as $key => $value) {
+            if (!isset($seen[$key])) {
+                $out[] = $key . '=' . $value;
+            }
+        }
+    }
+
+    if (!$foundSection) {
+        $out[] = '';
+        $out[] = '[' . $section . ']';
+        foreach ($changes as $key => $value) {
+            $out[] = $key . '=' . $value;
+        }
+    }
+
+    $backup = $path . '.backup.' . date('Ymd-His');
+    @copy($path, $backup);
+    if (@file_put_contents($path, implode("\n", $out) . "\n", LOCK_EX) === false) {
+        throw new RuntimeException('Não foi possível gravar ' . $path . '.');
+    }
+}
+
+function parse_sds_command_text(string $text): array
+{
+    $items = [];
+    foreach (preg_split('/\R/', $text) ?: [] as $rawLine) {
+        $line = trim($rawLine);
+        if ($line === '' || $line[0] === '#' || $line[0] === ';') {
+            continue;
+        }
+        if (strpos($line, '=') === false) {
+            throw new InvalidArgumentException('Cada DTMF tem de usar o formato CODIGO=COMANDO.');
+        }
+        [$key, $value] = explode('=', $line, 2);
+        $key = trim($key);
+        $value = trim($value);
+        if ($key === '' || $value === '') {
+            throw new InvalidArgumentException('Cada DTMF precisa de código e comando.');
+        }
+        if (!preg_match('/^[0-9A-Za-z_.:-]+$/', $key)) {
+            throw new InvalidArgumentException('Código DTMF inválido: ' . $key);
+        }
+        $items[$key] = $value;
+    }
+    return $items;
+}
+
+function sds_command_text(array $commandMap): string
+{
+    if (!$commandMap) {
+        $commandMap = [
+            '99' => 'ModuleMetarInfo:play',
+            '91' => 'ModuleParrot:activate',
+            '90' => 'ModuleParrot:deactivate',
         ];
     }
-    return $levels;
+    $lines = [];
+    foreach ($commandMap as $key => $value) {
+        $lines[] = $key . '=' . $value;
+    }
+    return implode("\n", $lines);
+}
+
+function save_repeater_config(array $input): array
+{
+    $callsign = trim((string)($input['callsign'] ?? ''));
+    $gssi = preg_replace('/\D+/', '', (string)($input['gssi'] ?? '')) ?? '';
+    $defaultTg = preg_replace('/\D+/', '', (string)($input['default_tg'] ?? '')) ?? '';
+    $monitorTgs = preg_replace('/[^0-9,]+/', '', (string)($input['monitor_tgs'] ?? '')) ?? '';
+    $mode = trim((string)($input['tetra_mode'] ?? 'DMO-MS'));
+    $modules = trim((string)($input['modules'] ?? ''));
+    $dtmfCommands = parse_sds_command_text((string)($input['dtmf_commands'] ?? ($input['sds_commands'] ?? '')));
+
+    if (!preg_match('/^[A-Za-z0-9_-]{3,18}$/', $callsign)) {
+        throw new InvalidArgumentException('Indicativo inválido.');
+    }
+    if ($gssi === '' || strlen($gssi) > 8) {
+        throw new InvalidArgumentException('GSSI inválido.');
+    }
+    if ($defaultTg !== '' && strlen($defaultTg) > 8) {
+        throw new InvalidArgumentException('TG prioritário inválido.');
+    }
+    if (!in_array($mode, ['DMO-MS', 'DMO-RPT', 'TMO'], true)) {
+        throw new InvalidArgumentException('Modo TETRA inválido.');
+    }
+
+    $tetraChanges = [
+        'CALLSIGN' => $callsign,
+        'TETRA_MODE' => $mode,
+        'GSSI' => $gssi,
+    ];
+    if ($modules !== '') {
+        $tetraChanges['MODULES'] = $modules;
+    }
+
+    set_config_section_keys(TETRALOGIC_CONFIG, 'TetraLogic', $tetraChanges);
+    set_config_section_keys(TETRALOGIC_CONFIG, 'SdsToCommand', $dtmfCommands);
+
+    if (is_readable(SVXLINK_CONFIG) && is_writable(SVXLINK_CONFIG)) {
+        $reflectorChanges = ['CALLSIGN' => $callsign];
+        if ($defaultTg !== '') {
+            $reflectorChanges['DEFAULT_TG'] = $defaultTg;
+        }
+        if ($monitorTgs !== '') {
+            $reflectorChanges['MONITOR_TGS'] = $monitorTgs;
+        }
+        set_config_section_keys(SVXLINK_CONFIG, 'ReflectorLogic', $reflectorChanges);
+    }
+
+    write_local_dashboard_config(['SVXDASH_SITE' => $callsign]);
+    return dashboard_admin_settings_state();
+}
+
+function dashboard_admin_settings_state(): array
+{
+    $config = dashboard_config();
+    $logic = $config['logic'];
+    $reflector = $config['reflector'];
+    $sdsCommands = sds_command_text($config['command_map']);
+
+    return [
+        'paths' => [
+            'svxlink_config' => SVXLINK_CONFIG,
+            'tetralogic_config' => TETRALOGIC_CONFIG,
+            'helper' => DASH_MAINT_HELPER,
+        ],
+        'settings' => [
+            'callsign' => (string)($logic['CALLSIGN'] ?? ($reflector['CALLSIGN'] ?? DASH_SITE)),
+            'tetra_mode' => (string)($logic['TETRA_MODE'] ?? 'DMO-MS'),
+            'gssi' => (string)($logic['GSSI'] ?? '1'),
+            'default_tg' => (string)($reflector['DEFAULT_TG'] ?? ''),
+            'monitor_tgs' => (string)($reflector['MONITOR_TGS'] ?? ''),
+            'modules' => implode(',', $config['modules']),
+            'dtmf_commands' => $sdsCommands,
+        ],
+        'helper_ready' => is_executable(DASH_MAINT_HELPER),
+        'actions' => [
+            ['id' => 'restart-svxlink', 'label' => 'Reiniciar SvxLink', 'risk' => 'medium'],
+            ['id' => 'apt-update', 'label' => 'Actualizar lista apt', 'risk' => 'low'],
+            ['id' => 'apt-upgrade', 'label' => 'Actualizar pacotes', 'risk' => 'medium'],
+            ['id' => 'meteo-now', 'label' => 'Gerar aviso meteo agora', 'risk' => 'low'],
+            ['id' => 'restart-system', 'label' => 'Reiniciar equipamento', 'risk' => 'high'],
+        ],
+    ];
+}
+
+function run_dashboard_maintenance_action(string $action): array
+{
+    $allowed = array_column(dashboard_admin_settings_state()['actions'], 'id');
+    if (!in_array($action, $allowed, true)) {
+        throw new InvalidArgumentException('Acção de manutenção inválida.');
+    }
+    if (!is_executable(DASH_MAINT_HELPER)) {
+        throw new RuntimeException('Helper de manutenção não instalado: ' . DASH_MAINT_HELPER);
+    }
+
+    $cmd = implode(' ', array_map('escapeshellarg', ['sudo', '-n', DASH_MAINT_HELPER, $action])) . ' 2>&1';
+    $output = [];
+    $code = 1;
+    exec($cmd, $output, $code);
+    $text = trim(implode("\n", array_slice($output, -40)));
+    if ($code !== 0) {
+        throw new RuntimeException($text !== '' ? $text : 'A acção falhou.');
+    }
+
+    return [
+        'action' => $action,
+        'status' => 'ok',
+        'output' => $text,
+    ];
 }
 
 function default_pei_presets(): array
@@ -695,20 +1091,26 @@ function send_pei_command(string $command, string $source = 'admin'): array
     return $entry;
 }
 
-function apply_power_level(int $dbm): array
+function apply_power_level(float $dbm): array
 {
-    $valid = array_column(radio_power_levels(), 'dbm');
-    if (!in_array($dbm, $valid, true)) {
+    $selected = null;
+    foreach (radio_power_levels() as $level) {
+        if (abs((float)$level['dbm'] - $dbm) < 0.01) {
+            $selected = $level;
+            break;
+        }
+    }
+    if ($selected === null) {
         throw new InvalidArgumentException('Nível de potência não suportado.');
     }
     if (DASH_POWER_COMMAND_TEMPLATE === '') {
         throw new RuntimeException('O modelo de comando de potência ainda não está configurado. Confirma primeiro o comando PEI Motorola.');
     }
 
-    $watts = dbm_to_watts((float)$dbm);
+    $watts = (float)$selected['watts'];
     $command = str_replace(
         ['{dbm}', '{mw}', '{w}'],
-        [(string)$dbm, (string)round($watts * 1000), (string)round($watts, 3)],
+        [number_format((float)$selected['dbm'], 1, '.', ''), (string)round($watts * 1000), (string)round($watts, 3)],
         DASH_POWER_COMMAND_TEMPLATE
     );
 

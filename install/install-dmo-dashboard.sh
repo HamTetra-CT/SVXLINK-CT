@@ -2,7 +2,7 @@
 set -euo pipefail
 
 WEB_ROOT="${WEB_ROOT:-/var/www/html}"
-SITE_NAME="${SITE_NAME:-CT DMO}"
+SITE_NAME="${SITE_NAME:-CQ0Exxx}"
 TIMEZONE="${TIMEZONE:-Europe/Lisbon}"
 ADMIN_USER="${ADMIN_USER:-admin}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-hamtetra-ct}"
@@ -10,7 +10,15 @@ SDS_PTY="${SDS_PTY:-/tmp/tetra_sds}"
 PEI_PTY="${PEI_PTY:-/tmp/pei_pty}"
 POWER_COMMAND_TEMPLATE="${POWER_COMMAND_TEMPLATE:-}"
 STATE_DIR="${STATE_DIR:-/var/lib/svxlink-ct}"
+METEO_CONFIG_FILE="${METEO_CONFIG_FILE:-${STATE_DIR}/meteo-alerts.json}"
+METEO_STATE_FILE="${METEO_STATE_FILE:-${STATE_DIR}/meteo-alerts-state.json}"
+METEO_RUNNER="${METEO_RUNNER:-/usr/local/sbin/svxlink-ct-meteo-alerts}"
+METEO_CREDENTIALS="${METEO_CREDENTIALS:-/home/pi/chave.json}"
+METEO_OUTPUT_WAV="${METEO_OUTPUT_WAV:-/usr/share/svxlink/sounds/pt_PT/Core/aviso.wav}"
+METEO_DTMF_PTY="${METEO_DTMF_PTY:-/tmp/svxlink_dtmf}"
+MAINT_HELPER="${MAINT_HELPER:-/usr/local/sbin/svxlink-ct-dashboard-action}"
 TETRALOGIC_CONF="${TETRALOGIC_CONF:-/etc/svxlink/svxlink.d/TetraLogic.conf}"
+SVXLINK_CONF="${SVXLINK_CONF:-/etc/svxlink/svxlink.conf}"
 FORCE_CONFIG="${FORCE_CONFIG:-0}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -83,6 +91,13 @@ SDS_PTY_PHP="$(php_string "${SDS_PTY}")"
 PEI_PTY_PHP="$(php_string "${PEI_PTY}")"
 POWER_COMMAND_TEMPLATE_PHP="$(php_string "${POWER_COMMAND_TEMPLATE}")"
 STATE_DIR_PHP="$(php_string "${STATE_DIR}")"
+METEO_CONFIG_FILE_PHP="$(php_string "${METEO_CONFIG_FILE}")"
+METEO_STATE_FILE_PHP="$(php_string "${METEO_STATE_FILE}")"
+METEO_RUNNER_PHP="$(php_string "${METEO_RUNNER}")"
+METEO_CREDENTIALS_PHP="$(php_string "${METEO_CREDENTIALS}")"
+METEO_OUTPUT_WAV_PHP="$(php_string "${METEO_OUTPUT_WAV}")"
+METEO_DTMF_PTY_PHP="$(php_string "${METEO_DTMF_PTY}")"
+MAINT_HELPER_PHP="$(php_string "${MAINT_HELPER}")"
 
 if [ -f "${WEB_ROOT}/include/config.local.php" ] && [ "${FORCE_CONFIG}" != "1" ]; then
   echo "A manter ${WEB_ROOT}/include/config.local.php existente"
@@ -94,7 +109,7 @@ return [
     'SVXDASH_VERSION' => 'V1.0',
     'SVXDASH_SITE' => '${SITE_NAME_PHP}',
     'SVXDASH_TITLE' => 'Painel SVXLINK DMO',
-    'SVXDASH_SUBTITLE' => 'Gateway DMO MTM5400',
+    'SVXDASH_SUBTITLE' => 'Ponte DMO MTM5400',
     'SVXDASH_REFRESH_SECONDS' => '5',
     'SVXDASH_MTM_MODEL' => 'Motorola MTM5400',
     'SVXDASH_ADMIN_USER' => '${ADMIN_USER_PHP}',
@@ -108,6 +123,13 @@ return [
     'SVXDASH_SDS_PRESETS_FILE' => '${STATE_DIR_PHP}/sds-presets.json',
     'SVXDASH_SDS_LOG_FILE' => '${STATE_DIR_PHP}/sds-log.jsonl',
     'SVXDASH_PEI_LOG_FILE' => '${STATE_DIR_PHP}/pei-log.jsonl',
+    'SVXDASH_METEO_CONFIG_FILE' => '${METEO_CONFIG_FILE_PHP}',
+    'SVXDASH_METEO_STATE_FILE' => '${METEO_STATE_FILE_PHP}',
+    'SVXDASH_METEO_RUNNER' => '${METEO_RUNNER_PHP}',
+    'SVXDASH_METEO_CREDENTIALS' => '${METEO_CREDENTIALS_PHP}',
+    'SVXDASH_METEO_OUTPUT_WAV' => '${METEO_OUTPUT_WAV_PHP}',
+    'SVXDASH_METEO_DTMF_PTY' => '${METEO_DTMF_PTY_PHP}',
+    'SVXDASH_MAINT_HELPER' => '${MAINT_HELPER_PHP}',
 ];
 PHP
 fi
@@ -136,6 +158,14 @@ if [ -e /var/log/svxlink ]; then
 fi
 if [ -d /etc/svxlink ]; then
   chmod -R a+rX /etc/svxlink 2>/dev/null || true
+fi
+if id www-data >/dev/null 2>&1; then
+  for conf_file in "${SVXLINK_CONF}" "${TETRALOGIC_CONF}"; do
+    if [ -f "${conf_file}" ]; then
+      chgrp www-data "${conf_file}" 2>/dev/null || true
+      chmod 664 "${conf_file}" 2>/dev/null || true
+    fi
+  done
 fi
 
 echo "[7/7] A activar Apache"

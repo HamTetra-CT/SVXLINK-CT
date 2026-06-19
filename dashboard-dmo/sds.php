@@ -34,7 +34,7 @@ $adminReady = $sds['admin_configured'] && $sds['admin_authenticated'];
       <a class="active" href="sds.php">SDS</a>
       <a href="admin.php">Administração</a>
       <a href="logs.php">Registos</a>
-      <a href="index.php#hardware">Hardware</a>
+      <a href="index.php#hardware">Equipamento</a>
       <select class="language-select" id="language-select" aria-label="Idioma">
         <option value="pt">PT</option>
         <option value="en">EN</option>

@@ -35,12 +35,16 @@ if ($action === 'pei_state') {
     json_out(pei_dashboard_state());
 }
 
-if (in_array($action, ['sds_send', 'sds_save_preset', 'sds_delete_preset', 'pei_send', 'pei_power', 'admin_password'], true)) {
+if ($action === 'meteo_state') {
+    json_out(meteo_dashboard_state());
+}
+
+if (in_array($action, ['sds_send', 'sds_save_preset', 'sds_delete_preset', 'pei_send', 'pei_power', 'admin_password', 'meteo_save', 'server_config', 'maintenance_action'], true)) {
     if (!dashboard_admin_configured()) {
         json_out(['ok' => false, 'error' => 'A palavra-passe de administração não está configurada.'], 403);
     }
     if (!dashboard_admin_authenticated()) {
-        header('WWW-Authenticate: Basic realm="SVXLINK-CT Dashboard"');
+        header('WWW-Authenticate: Basic realm="SVXLINK-CT Painel"');
         json_out(['ok' => false, 'error' => 'Autenticação necessária.'], 401);
     }
 
@@ -49,6 +53,21 @@ if (in_array($action, ['sds_send', 'sds_save_preset', 'sds_delete_preset', 'pei_
         if ($action === 'admin_password') {
             update_admin_password((string)($body['password'] ?? ''));
             json_out(['ok' => true]);
+        }
+
+        if ($action === 'meteo_save') {
+            $config = save_meteo_config($body);
+            json_out(['ok' => true, 'config' => $config, 'state' => meteo_dashboard_state()]);
+        }
+
+        if ($action === 'server_config') {
+            $state = save_repeater_config($body);
+            json_out(['ok' => true, 'state' => $state]);
+        }
+
+        if ($action === 'maintenance_action') {
+            $result = run_dashboard_maintenance_action((string)($body['maintenance_action'] ?? ''));
+            json_out(['ok' => true, 'result' => $result]);
         }
 
         if ($action === 'sds_send') {
@@ -73,7 +92,7 @@ if (in_array($action, ['sds_send', 'sds_save_preset', 'sds_delete_preset', 'pei_
         }
 
         if ($action === 'pei_power') {
-            $entry = apply_power_level((int)($body['dbm'] ?? 0));
+            $entry = apply_power_level((float)($body['dbm'] ?? 0));
             json_out(['ok' => true, 'entry' => $entry, 'state' => pei_dashboard_state()]);
         }
 

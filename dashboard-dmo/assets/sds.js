@@ -18,7 +18,7 @@ function esc(value) {
 function setStatus(id, message, ok) {
   const el = $(id);
   if (!el) return;
-  el.textContent = message || '';
+  el.textContent = window.SVX_I18N ? window.SVX_I18N.t(message || '') : (message || '');
   el.classList.toggle('ok', !!ok);
   el.classList.toggle('error', !!message && !ok);
 }
@@ -60,11 +60,12 @@ function renderPresets(presets) {
   const items = Array.isArray(presets) ? presets : [];
   $('sds-preset-count').textContent = String(items.length);
   if (!items.length) {
-    wrap.innerHTML = '<div class="empty">Sem modelos SDS</div>';
+    wrap.innerHTML = '<div class="empty">' + esc(window.SVX_I18N ? window.SVX_I18N.t('Sem modelos SDS') : 'Sem modelos SDS') + '</div>';
     return;
   }
   wrap.innerHTML = items.map((preset) => {
-    const meta = (preset.type === 'R' ? 'HEX' : 'TEXTO') + ' ' + (preset.destination || 'sem destino');
+    const noDestination = window.SVX_I18N ? window.SVX_I18N.t('sem destino') : 'sem destino';
+    const meta = (preset.type === 'R' ? 'HEX' : 'TEXTO') + ' ' + (preset.destination || noDestination);
     return '<button class="preset-item" type="button"' +
       ' data-id="' + esc(preset.id) + '"' +
       ' data-destination="' + esc(preset.destination) + '"' +
@@ -82,9 +83,9 @@ function renderLog(log) {
   const body = $('sds-log-body');
   if (!body) return;
   const items = Array.isArray(log) ? log : [];
-  $('sds-log-count').textContent = String(items.length) + ' entradas';
+  $('sds-log-count').textContent = window.SVX_I18N ? window.SVX_I18N.t(String(items.length) + ' entradas') : String(items.length) + ' entradas';
   if (!items.length) {
-    body.innerHTML = '<tr><td colspan="5" class="empty">Ainda não foram enviados SDS pelo painel</td></tr>';
+    body.innerHTML = '<tr><td colspan="5" class="empty">' + esc(window.SVX_I18N ? window.SVX_I18N.t('Ainda não foram enviados SDS pelo painel') : 'Ainda não foram enviados SDS pelo painel') + '</td></tr>';
     return;
   }
   body.innerHTML = items.map((entry) => {

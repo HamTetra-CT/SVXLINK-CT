@@ -6,6 +6,8 @@ Painel PHP leve para uma instalação SvxLink com TetraLogic e Motorola MTM5400 
 
 - Mostrar estado DMO: espera, RX local e TX para GSSI.
 - Ler `svxlink.conf`, `TetraLogic.conf`, `tetra_users.json`, `pei-init.json` e `/var/log/svxlink`.
+- Gerir pelo painel o indicativo, GSSI, TG prioritário, TGs monitorizados e DTMFs para comandos.
+- Activar avisos meteorológicos IPMA por distrito/ilha com voz `pt_PT`.
 - Remover partes que não interessam neste uso: pontes legadas, TGs analógicos genéricos, QRZ externo e leitura pesada de registos antigos.
 - Evitar comandos shell para ler registos. O painel usa leitura parcial do ficheiro para manter o Raspberry responsivo.
 
@@ -37,12 +39,14 @@ Por omissão usa os caminhos normais do sistema. Para ajustar sem editar código
 return [
     'SVXDASH_TIMEZONE' => 'Europe/Lisbon',
     'SVXDASH_VERSION' => 'V1.0',
-    'SVXDASH_SITE' => 'CT DMO',
+    'SVXDASH_SITE' => 'CQ0Exxx',
     'SVXDASH_TITLE' => 'Painel SVXLINK DMO',
-    'SVXDASH_SUBTITLE' => 'Gateway DMO MTM5400',
+    'SVXDASH_SUBTITLE' => 'Ponte DMO MTM5400',
     'SVXDASH_MTM_MODEL' => 'Motorola MTM5400',
     'SVXDASH_ADMIN_USER' => 'admin',
     'SVXDASH_ADMIN_PASSWORD' => 'hamtetra-ct',
+    'SVXDASH_METEO_CONFIG_FILE' => '/var/lib/svxlink-ct/meteo-alerts.json',
+    'SVXDASH_MAINT_HELPER' => '/usr/local/sbin/svxlink-ct-dashboard-action',
 ];
 ```
 
@@ -60,6 +64,9 @@ SVXDASH_ROOT=/path/to/extracted-root php -S 127.0.0.1:8088 -t dashboard-dmo
 - `logs.php`: eventos filtrados.
 - `api.php?action=dashboard`: estado completo em JSON.
 - `api.php?action=events`: eventos e estado runtime.
+- `api.php?action=meteo_state`: estado dos avisos IPMA.
+- `api.php?action=server_config`: grava configuração principal do repetidor, com autenticação.
+- `api.php?action=maintenance_action`: executa acções de manutenção permitidas, com autenticação.
 
 ## Dados DMO usados
 
@@ -75,3 +82,16 @@ O parser foi afinado para as mensagens reais do TetraLogic:
 - `Rx1: Distortion detected`
 
 Isto evita depender de módulos que já não se usam neste cenário.
+
+## Avisos IPMA
+
+Os avisos oficiais são por área/distrito. O painel mostra apenas distritos e ilhas IPMA, por exemplo `Lisboa (LSB)`, `Porto (POR)` e `Madeira (MAD)`.
+
+Para gerar voz é necessário:
+
+```bash
+sudo install/install-meteo-alerts.sh
+sudo cp chave.json /home/pi/chave.json
+```
+
+A chave é local da máquina e não pertence ao repositório.

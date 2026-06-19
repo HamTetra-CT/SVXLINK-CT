@@ -21,6 +21,8 @@ O instalador:
 - coloca o painel em `/var/www/html`;
 - instala o menu `sudo svxlink-ct`;
 - instala as vozes `pt_PT`;
+- instala avisos IPMA por voz com Google Text-to-Speech e `sox`;
+- instala o helper seguro que permite ao painel reiniciar SvxLink, reiniciar o equipamento e correr tarefas apt;
 - configura `DEFAULT_LANG=pt_PT` quando encontra os ficheiros SvxLink;
 - configura `SDS_PTY=/tmp/tetra_sds` e `PEI_PTY=/tmp/pei_pty` no `TetraLogic.conf` quando o ficheiro existe;
 - instala a actualização diária de utilizadores às `04:00`.
@@ -62,6 +64,22 @@ O menu permite:
 - instalar/actualizar vozes `pt_PT`;
 - editar `svxlink.conf`, `TetraLogic.conf` e `tetra_users.json`;
 - reiniciar o SvxLink manualmente quando for mesmo necessário.
+- correr `apt update` e `apt upgrade`;
+- gerar aviso meteorológico IPMA manualmente.
+
+## Administração pelo dashboard
+
+O painel `Administração` permite configurar sem linha de comandos:
+
+- indicativo do repetidor, por defeito `CQ0Exxx`;
+- modo TETRA, GSSI local, TG prioritário e TGs monitorizados;
+- DTMFs que disparam comandos SvxLink/TetraLogic, incluindo exemplos para `MetarInfo`, `Parrot ON` e `Parrot OFF`;
+- palavra-passe do painel;
+- comandos PEI e potência RF;
+- avisos meteorológicos IPMA por distrito/ilha;
+- reinício do SvxLink, reboot do equipamento, `apt update` e `apt upgrade`.
+
+Os botões de manutenção usam `/usr/local/sbin/svxlink-ct-dashboard-action` via `/etc/sudoers.d/svxlink-ct-dashboard`. O Apache só consegue chamar esse helper com as acções previstas.
 
 ## Actualização diária de utilizadores
 
@@ -108,8 +126,30 @@ DEFAULT_LANG=pt_PT
 
 em `svxlink.conf` e `TetraLogic.conf`.
 
+## Avisos meteorológicos IPMA
+
+O instalador cria:
+
+```text
+/var/lib/svxlink-ct/meteo-alerts.json
+/usr/local/sbin/svxlink-ct-meteo-alerts
+/etc/cron.d/svxlink-ct-meteo-alerts
+```
+
+Depois copia a chave Google Text-to-Speech para:
+
+```text
+/home/pi/chave.json
+```
+
+No painel, entra em `Administração`, activa `Avisos meteorológicos`, escolhe o distrito/ilha IPMA e define o intervalo. O cron corre a cada 5 minutos mas respeita o intervalo escolhido.
+
 ## Notas DMO MTM5400/MTM800E
 
 - A leitura de RSSI por terminal depende do que o TetraLogic conseguir expor nos registos/PEI.
 - A potência RF aparece com tabela dBm/W/mW, mas a aplicação directa fica bloqueada até confirmarmos o comando PEI Motorola correcto.
 - Para produção, muda a palavra-passe inicial do painel.
+
+## Compatibilidade Linux
+
+O painel e instaladores são desenhados para `amd64` e `arm64` em Debian, Ubuntu Server e Raspberry Pi OS. A parte web é PHP/Apache e é independente da arquitectura. O SvxLink/TetraLogic, áudio ALSA, portas USB e permissões do rádio podem precisar de ajustes próprios de cada equipamento.

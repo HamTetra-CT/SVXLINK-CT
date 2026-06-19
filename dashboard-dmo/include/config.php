@@ -39,8 +39,8 @@ function dash_root_path(string $relative, string $default): string
 define('DASH_TIMEZONE', dash_config('SVXDASH_TIMEZONE', 'Europe/Lisbon'));
 define('DASH_VERSION', dash_config('SVXDASH_VERSION', 'V1.0'));
 define('DASH_TITLE', dash_config('SVXDASH_TITLE', 'Painel SVXLINK DMO'));
-define('DASH_SUBTITLE', dash_config('SVXDASH_SUBTITLE', 'Gateway DMO MTM5400'));
-define('DASH_SITE', dash_config('SVXDASH_SITE', 'CT DMO'));
+define('DASH_SUBTITLE', dash_config('SVXDASH_SUBTITLE', 'Ponte DMO MTM5400'));
+define('DASH_SITE', dash_config('SVXDASH_SITE', 'CQ0Exxx'));
 define('DASH_REFRESH_SECONDS', (int)dash_config('SVXDASH_REFRESH_SECONDS', '5'));
 define('DASH_LOG_LINES', (int)dash_config('SVXDASH_LOG_LINES', '900'));
 define('DASH_HAMTETRA_URL', dash_config('SVXDASH_HAMTETRA_URL', 'https://github.com/HamTetra-CT/'));
@@ -88,3 +88,16 @@ define('DASH_PEI_LOG_FILE', dash_config(
     dash_root_path('/var/lib/svxlink-ct/pei-log.jsonl', '/var/lib/svxlink-ct/pei-log.jsonl')
 ));
 define('DASH_POWER_COMMAND_TEMPLATE', dash_config('SVXDASH_POWER_COMMAND_TEMPLATE', ''));
+define('DASH_METEO_CONFIG_FILE', dash_config(
+    'SVXDASH_METEO_CONFIG_FILE',
+    dash_root_path('/var/lib/svxlink-ct/meteo-alerts.json', '/var/lib/svxlink-ct/meteo-alerts.json')
+));
+define('DASH_METEO_STATE_FILE', dash_config(
+    'SVXDASH_METEO_STATE_FILE',
+    dash_root_path('/var/lib/svxlink-ct/meteo-alerts-state.json', '/var/lib/svxlink-ct/meteo-alerts-state.json')
+));
+define('DASH_METEO_RUNNER', dash_config('SVXDASH_METEO_RUNNER', '/usr/local/sbin/svxlink-ct-meteo-alerts'));
+define('DASH_METEO_CREDENTIALS', dash_config('SVXDASH_METEO_CREDENTIALS', '/home/pi/chave.json'));
+define('DASH_METEO_OUTPUT_WAV', dash_config('SVXDASH_METEO_OUTPUT_WAV', '/usr/share/svxlink/sounds/pt_PT/Core/aviso.wav'));
+define('DASH_METEO_DTMF_PTY', dash_config('SVXDASH_METEO_DTMF_PTY', '/tmp/svxlink_dtmf'));
+define('DASH_MAINT_HELPER', dash_config('SVXDASH_MAINT_HELPER', '/usr/local/sbin/svxlink-ct-dashboard-action'));

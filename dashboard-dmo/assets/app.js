@@ -16,7 +16,8 @@ function statusLabel(value) {
     unknown: 'DESCONHECIDO'
   };
   const key = String(value || 'unknown').toLowerCase();
-  return map[key] || String(value || '').toUpperCase();
+  const label = map[key] || String(value || '').toUpperCase();
+  return window.SVX_I18N ? window.SVX_I18N.t(label) : label;
 }
 
 function text(id, value) {
@@ -41,7 +42,8 @@ function renderEvents(events) {
   if (!body || !Array.isArray(events)) return;
   const latest = events.slice(-24);
   if (!latest.length) {
-    body.innerHTML = '<tr><td colspan="5" class="empty">Sem eventos encontrados</td></tr>';
+    const emptyText = window.SVX_I18N ? window.SVX_I18N.t('Sem eventos encontrados') : 'Sem eventos encontrados';
+    body.innerHTML = '<tr><td colspan="5" class="empty">' + esc(emptyText) + '</td></tr>';
     lastEventsHtml = body.innerHTML;
     return;
   }
@@ -67,17 +69,19 @@ function renderMobiles(mobiles) {
   if (!body || !mobiles) return;
 
   text('mobiles-count', String(mobiles.count || 0));
-  text('gateway-rssi', mobiles.gateway_rssi === null || mobiles.gateway_rssi === undefined ? 'Indisponível' : mobiles.gateway_rssi + ' dBm');
+  const unavailable = window.SVX_I18N ? window.SVX_I18N.t('Indisponível') : 'Indisponível';
+  text('gateway-rssi', mobiles.gateway_rssi === null || mobiles.gateway_rssi === undefined ? unavailable : mobiles.gateway_rssi + ' dBm');
   text('mobiles-note', mobiles.rssi_note || '');
 
   const items = Array.isArray(mobiles.items) ? mobiles.items.slice(0, 12) : [];
   if (!items.length) {
-    body.innerHTML = '<tr><td colspan="3" class="empty">Sem terminais observados</td></tr>';
+    const emptyText = window.SVX_I18N ? window.SVX_I18N.t('Sem terminais observados') : 'Sem terminais observados';
+    body.innerHTML = '<tr><td colspan="3" class="empty">' + esc(emptyText) + '</td></tr>';
     lastMobilesHtml = body.innerHTML;
     return;
   }
   const html = items.map((mobile) => {
-    const rssi = mobile.rssi === null || mobile.rssi === undefined ? 'Indisponível' : mobile.rssi + ' dBm';
+    const rssi = mobile.rssi === null || mobile.rssi === undefined ? unavailable : mobile.rssi + ' dBm';
     return '<tr>' +
       '<td><strong>' + esc(mobile.peer || mobile.issi) + '</strong><span>' + esc(mobile.issi) + '</span></td>' +
       '<td>' + esc(mobile.last_seen || '') + '</td>' +
@@ -92,10 +96,12 @@ function renderMobiles(mobiles) {
 
 function renderHardware(hardware, service) {
   if (!hardware) return;
-  text('hardware-load', hardware.load || 'Indisponível');
-  text('hardware-temp', hardware.temp || 'Indisponível');
+  const unavailable = window.SVX_I18N ? window.SVX_I18N.t('Indisponível') : 'Indisponível';
+  text('hardware-load', hardware.load || unavailable);
+  text('hardware-temp', hardware.temp || unavailable);
   if (hardware.memory) {
-    text('memory-label', hardware.memory.label || 'Indisponível');
+    text('memory-label', hardware.memory.label || unavailable);
+    text('memory-main', hardware.memory.label || unavailable);
     const memoryBar = document.getElementById('memory-bar');
     if (memoryBar) memoryBar.style.width = Math.max(0, Math.min(100, Number(hardware.memory.percent) || 0)) + '%';
   }
@@ -104,19 +110,19 @@ function renderHardware(hardware, service) {
   if (diskBar) diskBar.style.width = Math.max(0, Math.min(100, Number(hardware.disk_percent) || 0)) + '%';
   if (service) {
     text('service-large', statusLabel(service.status));
-    text('service-uptime', service.uptime || 'Indisponível');
+    text('service-uptime', service.uptime || unavailable);
   }
 }
 
 function renderLatestEvent(events) {
   if (!Array.isArray(events) || !events.length) {
-    text('latest-message', 'Sem actividade recente');
+    text('latest-message', window.SVX_I18N ? window.SVX_I18N.t('Sem actividade recente') : 'Sem actividade recente');
     text('latest-time', '');
     text('latest-type', '');
     return;
   }
   const event = events[events.length - 1] || {};
-  text('latest-message', event.message || 'Sem actividade recente');
+  text('latest-message', event.message || (window.SVX_I18N ? window.SVX_I18N.t('Sem actividade recente') : 'Sem actividade recente'));
   text('latest-time', event.time || '');
   text('latest-type', event.label || '');
 }
@@ -141,13 +147,13 @@ async function refresh() {
     const panel = document.getElementById('state-panel');
     cls(panel, 'state-', runtime.state || 'idle');
 
-    text('state-label', runtime.label || 'EM ESPERA');
-    text('state-desc', runtime.description || 'A aguardar actividade DMO');
+    text('state-label', window.SVX_I18N ? window.SVX_I18N.t(runtime.label || 'EM ESPERA') : (runtime.label || 'EM ESPERA'));
+    text('state-desc', window.SVX_I18N ? window.SVX_I18N.t(runtime.description || 'A aguardar actividade DMO') : (runtime.description || 'A aguardar actividade DMO'));
     text('runtime-gssi', runtime.gssi || (data.tetra ? data.tetra.gssi : ''));
     text('runtime-pei', statusLabel(runtime.pei));
     text('service-status', statusLabel(service.status));
     text('reflector-status', statusLabel(runtime.reflector));
-    text('selected-tg', runtime.selected_tg || 'Nenhum');
+    text('selected-tg', runtime.selected_tg || (window.SVX_I18N ? window.SVX_I18N.t('Nenhum') : 'Nenhum'));
     text('warning-count', String(runtime.warnings || 0));
     text('audio-clips', String(runtime.audio_clips || 0));
     renderHardware(data.hardware || {}, service);

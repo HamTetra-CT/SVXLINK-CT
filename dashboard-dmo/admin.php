@@ -9,6 +9,10 @@ if (dashboard_admin_configured() && !dashboard_admin_authenticated()) {
 
 $data = dashboard_data();
 $pei = pei_dashboard_state();
+$adminSettings = dashboard_admin_settings_state();
+$settings = $adminSettings['settings'];
+$meteo = meteo_dashboard_state();
+$meteoConfig = $meteo['config'];
 $adminReady = $pei['admin_configured'] && $pei['admin_authenticated'];
 ?>
 <!doctype html>
@@ -34,7 +38,7 @@ $adminReady = $pei['admin_configured'] && $pei['admin_authenticated'];
       <a href="sds.php">SDS</a>
       <a class="active" href="admin.php">Administração</a>
       <a href="logs.php">Registos</a>
-      <a href="index.php#hardware">Hardware</a>
+      <a href="index.php#hardware">Equipamento</a>
       <select class="language-select" id="language-select" aria-label="Idioma">
         <option value="pt">PT</option>
         <option value="en">EN</option>
@@ -66,6 +70,53 @@ $adminReady = $pei['admin_configured'] && $pei['admin_authenticated'];
     <?php endif; ?>
 
     <section class="grid admin-grid">
+      <article class="card admin-wide">
+        <div class="card-head">
+          <div class="panel-title">Configuração do repetidor</div>
+          <span><?php echo h($adminSettings['paths']['tetralogic_config']); ?></span>
+        </div>
+        <form class="form-stack config-form" id="server-config-form">
+          <div class="form-grid">
+            <label>
+              Indicativo do repetidor
+              <input name="callsign" id="config-callsign" value="<?php echo h($settings['callsign']); ?>" placeholder="CQ0Exxx" <?php echo $adminReady ? '' : 'disabled'; ?>>
+            </label>
+            <label>
+              Modo TETRA
+              <select name="tetra_mode" id="config-tetra-mode" <?php echo $adminReady ? '' : 'disabled'; ?>>
+                <?php foreach (['DMO-MS', 'DMO-RPT', 'TMO'] as $mode): ?>
+                  <option value="<?php echo h($mode); ?>" <?php echo $settings['tetra_mode'] === $mode ? 'selected' : ''; ?>><?php echo h($mode); ?></option>
+                <?php endforeach; ?>
+              </select>
+            </label>
+            <label>
+              GSSI local
+              <input name="gssi" id="config-gssi" value="<?php echo h($settings['gssi']); ?>" inputmode="numeric" <?php echo $adminReady ? '' : 'disabled'; ?>>
+            </label>
+            <label>
+              TG prioritário
+              <input name="default_tg" id="config-default-tg" value="<?php echo h($settings['default_tg']); ?>" inputmode="numeric" <?php echo $adminReady ? '' : 'disabled'; ?>>
+            </label>
+            <label>
+              TG monitorizados
+              <input name="monitor_tgs" id="config-monitor-tgs" value="<?php echo h($settings['monitor_tgs']); ?>" placeholder="268, 915, 9990" <?php echo $adminReady ? '' : 'disabled'; ?>>
+            </label>
+            <label>
+              Módulos activos
+              <input name="modules" id="config-modules" value="<?php echo h($settings['modules']); ?>" placeholder="ModuleMetarInfo,ModuleParrot" <?php echo $adminReady ? '' : 'disabled'; ?>>
+            </label>
+          </div>
+          <label>
+            DTMFs para comandos SvxLink/TetraLogic
+            <textarea name="dtmf_commands" id="config-dtmf-commands" spellcheck="false" placeholder="99=ModuleMetarInfo:play" <?php echo $adminReady ? '' : 'disabled'; ?>><?php echo h($settings['dtmf_commands']); ?></textarea>
+          </label>
+          <div class="button-row">
+            <button type="submit" <?php echo $adminReady ? '' : 'disabled'; ?>>Guardar configuração</button>
+          </div>
+          <p class="form-status" id="server-config-status"></p>
+        </form>
+      </article>
+
       <article class="card">
         <div class="card-head">
           <div class="panel-title">Acesso ao painel</div>
@@ -152,6 +203,69 @@ $adminReady = $pei['admin_configured'] && $pei['admin_authenticated'];
         </div>
       </article>
 
+      <article class="card meteo-card">
+        <div class="card-head">
+          <div class="panel-title">Avisos meteorológicos</div>
+          <span><?php echo $meteo['runner_ready'] ? 'serviço pronto' : 'instalador pendente'; ?></span>
+        </div>
+        <form class="form-stack" id="meteo-form">
+          <label class="check-row">
+            <input type="checkbox" id="meteo-enabled" <?php echo !empty($meteoConfig['enabled']) ? 'checked' : ''; ?> <?php echo $adminReady ? '' : 'disabled'; ?>>
+            <span>Activar avisos por voz</span>
+          </label>
+          <label>
+            Intervalo
+            <select id="meteo-interval" <?php echo $adminReady ? '' : 'disabled'; ?>>
+              <?php foreach ($meteo['intervals'] as $interval): ?>
+                <option value="<?php echo h((string)$interval['value']); ?>" <?php echo (int)$meteoConfig['interval_minutes'] === (int)$interval['value'] ? 'selected' : ''; ?>>
+                  <?php echo h($interval['label']); ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </label>
+          <label>
+            Procurar distrito/ilha
+            <input type="search" id="meteo-location-search" placeholder="Lisboa, Porto, Madeira..." <?php echo $adminReady ? '' : 'disabled'; ?>>
+          </label>
+          <label>
+            Distrito/ilha IPMA
+            <select id="meteo-location" class="scroll-select" size="8" <?php echo $adminReady ? '' : 'disabled'; ?>>
+              <?php foreach ($meteo['locations'] as $location): ?>
+                <option value="<?php echo h($location['id']); ?>" <?php echo $meteoConfig['location_id'] === $location['id'] ? 'selected' : ''; ?>>
+                  <?php echo h($location['label'] . ' (' . $location['area'] . ')'); ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </label>
+          <dl class="kv compact-kv admin-info">
+            <div><dt>Chave</dt><dd class="<?php echo $meteo['credentials_ready'] ? 'ok-text' : 'warn-text'; ?>"><?php echo h($meteoConfig['credentials']); ?></dd></div>
+            <div><dt>Áudio</dt><dd><?php echo h($meteoConfig['output_wav']); ?></dd></div>
+            <div><dt>DTMF</dt><dd><?php echo h($meteoConfig['dtmf_command'] . ' em ' . $meteoConfig['dtmf_pty']); ?></dd></div>
+          </dl>
+          <div class="button-row">
+            <button type="submit" <?php echo $adminReady ? '' : 'disabled'; ?>>Guardar avisos</button>
+            <button type="button" class="button secondary maintenance-action" data-action="meteo-now" <?php echo $adminReady ? '' : 'disabled'; ?>>Gerar agora</button>
+          </div>
+          <p class="form-status" id="meteo-status"></p>
+        </form>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <div class="panel-title">Manutenção</div>
+          <span><?php echo $adminSettings['helper_ready'] ? 'helper activo' : 'helper em falta'; ?></span>
+        </div>
+        <div class="maintenance-grid">
+          <?php foreach ($adminSettings['actions'] as $action): ?>
+            <?php if ($action['id'] === 'meteo-now') { continue; } ?>
+            <button class="maintenance-action risk-<?php echo h($action['risk']); ?>" type="button" data-action="<?php echo h($action['id']); ?>" <?php echo ($adminReady && $adminSettings['helper_ready']) ? '' : 'disabled'; ?>>
+              <?php echo h($action['label']); ?>
+            </button>
+          <?php endforeach; ?>
+        </div>
+        <p class="form-status" id="maintenance-status"></p>
+      </article>
+
       <article class="card">
         <div class="card-head">
           <div class="panel-title">Registo PEI</div>
@@ -190,6 +304,8 @@ $adminReady = $pei['admin_configured'] && $pei['admin_authenticated'];
 
   <script>
     window.DMO_PEI = <?php echo json_encode($pei, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+    window.DMO_ADMIN_SETTINGS = <?php echo json_encode($adminSettings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+    window.DMO_METEO = <?php echo json_encode($meteo, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
   </script>
   <script src="assets/theme.js"></script>
   <script src="assets/i18n.js"></script>

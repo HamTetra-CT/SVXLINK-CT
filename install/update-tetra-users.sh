@@ -11,7 +11,7 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     --quiet) QUIET=1 ;;
     --force) FORCE=1 ;;
-    *) echo "Unknown argument: $1" >&2; exit 2 ;;
+    *) echo "Argumento desconhecido: $1" >&2; exit 2 ;;
   esac
   shift
 done

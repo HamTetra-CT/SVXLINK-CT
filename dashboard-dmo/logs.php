@@ -50,7 +50,7 @@ $events = array_slice($events, 0, 160);
       <a href="sds.php">SDS</a>
       <a href="admin.php">Administração</a>
       <a class="active" href="logs.php">Registos</a>
-      <a href="index.php#hardware">Hardware</a>
+      <a href="index.php#hardware">Equipamento</a>
       <select class="language-select" id="language-select" aria-label="Idioma">
         <option value="pt">PT</option>
         <option value="en">EN</option>
