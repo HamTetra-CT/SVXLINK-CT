@@ -8,7 +8,9 @@ function applyTheme(theme) {
     const label = selected === 'light' ? 'Modo noite' : 'Modo dia';
     const icon = selected === 'light' ? '☾' : '☀';
     const text = window.SVX_I18N ? window.SVX_I18N.t(label) : label;
-    button.innerHTML = '<span class="theme-icon" aria-hidden="true">' + icon + '</span><span class="theme-label">' + text + '</span>';
+    button.setAttribute('aria-label', text);
+    button.setAttribute('title', text);
+    button.innerHTML = '<span class="theme-icon" aria-hidden="true">' + icon + '</span>';
   }
 }
 

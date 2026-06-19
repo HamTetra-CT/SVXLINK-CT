@@ -44,7 +44,7 @@ $latestEvent = $data['events'] ? $data['events'][count($data['events']) - 1] : n
         <option value="fr">FR</option>
         <option value="es">ES</option>
       </select>
-      <button class="theme-toggle" type="button" id="theme-toggle">Modo dia</button>
+      <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Modo dia" title="Modo dia"><span class="theme-icon" aria-hidden="true">☀</span></button>
     </nav>
     <div class="top-actions">
       <div class="local-time">Hora local: <strong data-local-time><?php echo h(date('H:i:s')); ?></strong></div>
@@ -74,7 +74,7 @@ $latestEvent = $data['events'] ? $data['events'][count($data['events']) - 1] : n
         <div><span>Modo</span><strong id="tetra-mode"><?php echo h($tetra['mode']); ?></strong></div>
         <div><span>GSSI</span><strong id="runtime-gssi"><?php echo h($runtime['gssi'] ?: $tetra['gssi']); ?></strong></div>
         <div><span>ISSI</span><strong><?php echo h($tetra['issi']); ?></strong></div>
-        <div><span>PEI</span><strong id="runtime-pei"><?php echo h(strtoupper($runtime['pei'])); ?></strong></div>
+        <div><span>PEI</span><strong id="runtime-pei"><?php echo h(service_status_label((string)$runtime['pei'])); ?></strong></div>
       </div>
     </section>
 

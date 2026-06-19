@@ -181,7 +181,6 @@ async function refresh() {
     text('last-refresh', generated.toLocaleTimeString('pt-PT', { hour12: false }));
     renderEvents(data.events || []);
     renderMobiles(data.mobiles || {});
-    if (window.SVX_I18N) window.SVX_I18N.translatePage();
   } catch (err) {
     // Keep the last visible state if the Raspberry is busy.
   }

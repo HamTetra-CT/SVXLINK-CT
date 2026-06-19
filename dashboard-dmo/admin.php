@@ -47,7 +47,7 @@ $adminReady = $pei['admin_configured'] && $pei['admin_authenticated'];
         <option value="fr">FR</option>
         <option value="es">ES</option>
       </select>
-      <button class="theme-toggle" type="button" id="theme-toggle">Modo dia</button>
+      <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Modo dia" title="Modo dia"><span class="theme-icon" aria-hidden="true">☀</span></button>
     </nav>
     <div class="top-actions">
       <div class="local-time">Hora local: <strong data-local-time><?php echo h(date('H:i:s')); ?></strong></div>

@@ -45,6 +45,10 @@ if [ -z "${CREDENTIALS_SOURCE}" ]; then
       break
     fi
   done
+elif [ ! -f "${CREDENTIALS_SOURCE}" ]; then
+  echo "Chave Google não encontrada: ${CREDENTIALS_SOURCE}" >&2
+  echo "Copia primeiro a chave para esta máquina ou usa CHAVE_JSON=/caminho/certo/chave.json." >&2
+  exit 1
 fi
 
 if [ -n "${CREDENTIALS_SOURCE}" ] && [ -f "${CREDENTIALS_SOURCE}" ]; then

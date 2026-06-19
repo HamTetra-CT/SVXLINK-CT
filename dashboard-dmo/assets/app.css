@@ -882,10 +882,12 @@ textarea {
 
 @media (max-width: 1120px) {
   .state-panel {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.2fr) 150px minmax(220px, 300px);
+    min-height: 170px;
   }
   .radio-visual {
-    display: none;
+    display: block;
+    height: 105px;
   }
   .cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -922,9 +924,11 @@ textarea {
     flex: 1;
   }
   .cards,
-  .quick-grid,
-  .state-metrics {
+  .quick-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .state-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .command-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -1068,7 +1072,11 @@ button,
 .theme-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  justify-content: center;
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+  gap: 0;
 }
 
 .theme-icon {
@@ -1417,6 +1425,12 @@ html[data-theme="light"] textarea {
     padding: 12px;
   }
   .state-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .radio-visual {
+    display: none;
+  }
+  .state-metrics {
     grid-template-columns: minmax(0, 1fr);
   }
 }

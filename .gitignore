@@ -4,3 +4,5 @@ dashboard-dmo/include/config.local.php
 .DS_Store
 *.log
 *.pid
+chave.json
+**/chave.json
