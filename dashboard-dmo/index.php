@@ -62,14 +62,6 @@ $latestEvent = $data['events'] ? $data['events'][count($data['events']) - 1] : n
         <div class="state-label" id="state-label"><?php echo h($runtime['label']); ?></div>
         <div class="state-desc" id="state-desc"><?php echo h($runtime['description']); ?></div>
       </div>
-      <div class="radio-visual" aria-hidden="true">
-        <div class="antenna"></div>
-        <div class="radio-body">
-          <span></span><span></span><span></span>
-        </div>
-        <div class="wave wave-a"></div>
-        <div class="wave wave-b"></div>
-      </div>
       <div class="state-metrics">
         <div><span>Modo</span><strong id="tetra-mode"><?php echo h($tetra['mode']); ?></strong></div>
         <div><span>GSSI</span><strong id="runtime-gssi"><?php echo h($runtime['gssi'] ?: $tetra['gssi']); ?></strong></div>
@@ -129,11 +121,6 @@ $latestEvent = $data['events'] ? $data['events'][count($data['events']) - 1] : n
         </div>
       </article>
 
-      <article class="card service-card">
-        <div class="panel-title">Serviço SvxLink</div>
-        <div class="service-large" id="service-large"><?php echo h(service_status_label((string)$service['status'])); ?></div>
-        <p>Ligado há <span id="service-uptime"><?php echo h($service['uptime'] ?: 'Indisponível'); ?></span></p>
-      </article>
     </section>
 
     <section class="grid cards">

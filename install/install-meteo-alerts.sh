@@ -31,8 +31,10 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y python3 python3-pip ca-certificates sox
 
-if ! pip3 install "google-cloud-texttospeech<2.0.0"; then
+if pip3 install --help 2>/dev/null | grep -q -- '--break-system-packages'; then
   pip3 install --break-system-packages "google-cloud-texttospeech<2.0.0"
+else
+  pip3 install "google-cloud-texttospeech<2.0.0"
 fi
 
 mkdir -p "${STATE_DIR}"

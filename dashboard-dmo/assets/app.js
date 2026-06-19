@@ -134,8 +134,6 @@ function renderHardware(hardware, service) {
   const diskBar = document.getElementById('disk-bar');
   if (diskBar) diskBar.style.width = Math.max(0, Math.min(100, Number(diskPercent) || 0)) + '%';
   if (service) {
-    text('service-large', statusLabel(service.status));
-    text('service-uptime', service.uptime || unavailable);
     text('hardware-svxlink-uptime', service.uptime || unavailable);
   }
 }

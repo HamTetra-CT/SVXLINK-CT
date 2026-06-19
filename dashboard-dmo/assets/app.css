@@ -377,14 +377,13 @@ button,
 }
 
 .quick-grid {
-  grid-template-columns: 1.05fr .8fr 1.2fr .8fr;
+  grid-template-columns: minmax(360px, .95fr) minmax(260px, .7fr) minmax(420px, 1.2fr);
   margin-top: 12px;
-  align-items: stretch;
+  align-items: start;
 }
 
 .health-card,
-.latest-card,
-.service-card {
+.latest-card {
   min-height: 154px;
 }
 
@@ -886,12 +885,11 @@ textarea {
 
 @media (max-width: 1120px) {
   .state-panel {
-    grid-template-columns: minmax(0, 1.2fr) 120px minmax(220px, 300px);
-    min-height: 126px;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+    min-height: 0;
   }
   .radio-visual {
-    display: block;
-    height: 88px;
+    display: none;
   }
   .cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1064,9 +1062,52 @@ button,
 }
 
 .service-pill {
+  display: inline-flex;
+  gap: 9px;
+  align-items: center;
+  justify-content: center;
+  min-width: 112px;
   min-height: 34px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--panel);
+  color: var(--text);
+  font-weight: 900;
+}
+
+.service-pill strong {
+  color: var(--text);
+}
+
+.service-pill span {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--muted);
+}
+
+.service-pill.service-active {
+  border-color: rgba(0, 255, 157, .65);
+}
+
+.service-pill.service-inactive,
+.service-pill.service-failed,
+.service-pill.service-unknown {
+  border-color: rgba(255, 68, 68, .55);
+}
+
+.service-pill.service-active span {
+  background: var(--green);
+  box-shadow: 0 0 16px rgba(0, 255, 157, .45);
+}
+
+.service-pill.service-inactive span,
+.service-pill.service-failed span,
+.service-pill.service-unknown span {
+  background: var(--red);
+  box-shadow: 0 0 14px rgba(255, 68, 68, .4);
 }
 
 .local-time {
@@ -1108,10 +1149,11 @@ button,
 }
 
 .state-panel {
-  min-height: 126px;
-  grid-template-columns: minmax(0, 1.35fr) 130px minmax(250px, 340px);
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 520px);
   gap: 12px;
   padding: 12px;
+  align-items: center;
   border-radius: 7px;
 }
 
@@ -1125,7 +1167,7 @@ button,
 }
 
 .radio-visual {
-  height: 92px;
+  display: none;
 }
 
 .state-metrics {
@@ -1154,7 +1196,8 @@ button,
 }
 
 .quick-grid {
-  grid-template-columns: 1fr .72fr 1.15fr .72fr;
+  grid-template-columns: minmax(360px, .95fr) minmax(260px, .7fr) minmax(420px, 1.2fr);
+  align-items: start;
 }
 
 .card {
@@ -1290,7 +1333,6 @@ button,
 }
 
 .warning-card p,
-.service-card p,
 .latest-message,
 .latest-meta {
   margin-left: 12px;

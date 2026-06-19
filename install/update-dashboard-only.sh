@@ -13,7 +13,7 @@ ACTION_BIN="${ACTION_BIN:-/usr/local/sbin/svxlink-ct-dashboard-action}"
 SUDOERS_FILE="${SUDOERS_FILE:-/etc/sudoers.d/svxlink-ct-dashboard}"
 DEFAULTS_FILE="${DEFAULTS_FILE:-/etc/default/svxlink-ct-dashboard}"
 SVXLINK_SERVICE="${SVXLINK_SERVICE:-svxlink}"
-INSTALL_METEO="${INSTALL_METEO:-1}"
+INSTALL_METEO="${INSTALL_METEO:-0}"
 SVXLINK_CONF="${SVXLINK_CONF:-/etc/svxlink/svxlink.conf}"
 TETRALOGIC_CONF="${TETRALOGIC_CONF:-/etc/svxlink/svxlink.d/TetraLogic.conf}"
 
