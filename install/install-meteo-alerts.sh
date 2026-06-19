@@ -6,6 +6,8 @@ CONFIG_FILE="${CONFIG_FILE:-${STATE_DIR}/meteo-alerts.json}"
 RUNNER_BIN="${RUNNER_BIN:-/usr/local/sbin/svxlink-ct-meteo-alerts}"
 CRON_FILE="${CRON_FILE:-/etc/cron.d/svxlink-ct-meteo-alerts}"
 CRON_SCHEDULE="${CRON_SCHEDULE:-*/5 * * * *}"
+CREDENTIALS_DEST="${CREDENTIALS_DEST:-/home/pi/chave.json}"
+CREDENTIALS_SOURCE="${CHAVE_JSON:-${METEO_CREDENTIALS_SOURCE:-}}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
@@ -36,6 +38,22 @@ fi
 mkdir -p "${STATE_DIR}"
 install -m 0755 "${REPO_ROOT}/meteo/meteo_alerts.py" "${RUNNER_BIN}"
 
+if [ -z "${CREDENTIALS_SOURCE}" ]; then
+  for candidate in ./chave.json /boot/firmware/chave.json /boot/chave.json; do
+    if [ -f "${candidate}" ]; then
+      CREDENTIALS_SOURCE="${candidate}"
+      break
+    fi
+  done
+fi
+
+if [ -n "${CREDENTIALS_SOURCE}" ] && [ -f "${CREDENTIALS_SOURCE}" ]; then
+  install -m 0600 -D "${CREDENTIALS_SOURCE}" "${CREDENTIALS_DEST}"
+  if id pi >/dev/null 2>&1; then
+    chown pi:pi "${CREDENTIALS_DEST}" 2>/dev/null || true
+  fi
+fi
+
 if [ ! -f "${CONFIG_FILE}" ]; then
   cat > "${CONFIG_FILE}" <<JSON
 {
@@ -45,7 +63,7 @@ if [ ! -f "${CONFIG_FILE}" ]; then
   "location_label": "Lisboa",
   "area": "LSB",
   "area_label": "Lisboa",
-  "credentials": "/home/pi/chave.json",
+  "credentials": "${CREDENTIALS_DEST}",
   "output_wav": "/usr/share/svxlink/sounds/pt_PT/Core/aviso.wav",
   "dtmf_pty": "/tmp/svxlink_dtmf",
   "dtmf_command": "99#",
@@ -71,4 +89,9 @@ echo "Avisos meteorológicos instalados."
 echo "Configuração: ${CONFIG_FILE}"
 echo "Runner: ${RUNNER_BIN}"
 echo "Cron: ${CRON_FILE}"
-echo "Copia a chave Google para /home/pi/chave.json e activa os avisos no painel de Administração."
+if [ -f "${CREDENTIALS_DEST}" ]; then
+  echo "Chave Google instalada em ${CREDENTIALS_DEST}."
+else
+  echo "Copia a chave Google para ${CREDENTIALS_DEST} ou corre com CHAVE_JSON=/caminho/chave.json."
+fi
+echo "Activa os avisos no painel de Administração."

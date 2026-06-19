@@ -9,6 +9,8 @@ ACTION_BIN="${ACTION_BIN:-/usr/local/sbin/svxlink-ct-dashboard-action}"
 CRON_FILE="${CRON_FILE:-/etc/cron.d/svxlink-ct-users-update}"
 CRON_SCHEDULE="${CRON_SCHEDULE:-0 4 * * *}"
 SUDOERS_FILE="${SUDOERS_FILE:-/etc/sudoers.d/svxlink-ct-dashboard}"
+DEFAULTS_FILE="${DEFAULTS_FILE:-/etc/default/svxlink-ct-dashboard}"
+SVXLINK_SERVICE="${SVXLINK_SERVICE:-svxlink}"
 
 if [ "$(id -u)" -ne 0 ]; then
   echo "Corre como root: sudo $0"
@@ -24,6 +26,11 @@ fi
 install -m 0755 "${REPO_ROOT}/install/update-tetra-users.sh" "${USERS_BIN}"
 install -m 0755 "${REPO_ROOT}/menu/svxlink-ct-menu.sh" "${MENU_BIN}"
 install -m 0755 "${REPO_ROOT}/install/dashboard-action-helper.sh" "${ACTION_BIN}"
+
+cat > "${DEFAULTS_FILE}" <<DEFAULTS
+SVXLINK_SERVICE="${SVXLINK_SERVICE}"
+DEFAULTS
+chmod 0644 "${DEFAULTS_FILE}"
 
 cat > "${CRON_FILE}" <<CRON
 SHELL=/bin/sh
@@ -48,3 +55,4 @@ echo "  ${USERS_BIN}"
 echo "  ${ACTION_BIN}"
 echo "  ${CRON_FILE}"
 echo "  ${SUDOERS_FILE}"
+echo "  ${DEFAULTS_FILE}"

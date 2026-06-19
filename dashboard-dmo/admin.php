@@ -21,6 +21,8 @@ $adminReady = $pei['admin_configured'] && $pei['admin_authenticated'];
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Administração - <?php echo h($data['tetra']['callsign']); ?></title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/favicon.png">
   <link rel="stylesheet" href="assets/app.css">
 </head>
 <body data-page="admin">

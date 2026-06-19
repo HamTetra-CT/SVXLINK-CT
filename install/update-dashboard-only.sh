@@ -6,8 +6,12 @@ BRANCH="${BRANCH:-main}"
 TARGET_DIR="${TARGET_DIR:-/opt/svxlink-ct}"
 WEB_ROOT="${WEB_ROOT:-/var/www/html}"
 STATE_DIR="${STATE_DIR:-/var/lib/svxlink-ct}"
+SITE_NAME="${SITE_NAME:-CQ0Exxx}"
+FORCE_SITE="${FORCE_SITE:-1}"
 ACTION_BIN="${ACTION_BIN:-/usr/local/sbin/svxlink-ct-dashboard-action}"
 SUDOERS_FILE="${SUDOERS_FILE:-/etc/sudoers.d/svxlink-ct-dashboard}"
+DEFAULTS_FILE="${DEFAULTS_FILE:-/etc/default/svxlink-ct-dashboard}"
+SVXLINK_SERVICE="${SVXLINK_SERVICE:-svxlink}"
 INSTALL_METEO="${INSTALL_METEO:-1}"
 SVXLINK_CONF="${SVXLINK_CONF:-/etc/svxlink/svxlink.conf}"
 TETRALOGIC_CONF="${TETRALOGIC_CONF:-/etc/svxlink/svxlink.d/TetraLogic.conf}"
@@ -64,8 +68,8 @@ return [
     'SVXDASH_TIMEZONE' => 'Europe/Lisbon',
     'SVXDASH_VERSION' => 'V1.0',
     'SVXDASH_SITE' => 'CQ0Exxx',
-    'SVXDASH_TITLE' => 'Painel SVXLINK DMO',
-    'SVXDASH_SUBTITLE' => 'Ponte DMO MTM5400',
+    'SVXDASH_TITLE' => 'Painel SVXLINK',
+    'SVXDASH_SUBTITLE' => 'Motorola MTM5400',
     'SVXDASH_REFRESH_SECONDS' => '5',
     'SVXDASH_MTM_MODEL' => 'Motorola MTM5400',
     'SVXDASH_ADMIN_USER' => 'admin',
@@ -90,6 +94,20 @@ PHP
 fi
 rm -f "${TMP_CONFIG}"
 
+if [ "${FORCE_SITE}" = "1" ] && command -v php >/dev/null 2>&1; then
+  php -r '
+  $path = $argv[1];
+  $site = $argv[2];
+  $config = is_readable($path) ? require $path : [];
+  if (!is_array($config)) {
+      $config = [];
+  }
+  $config["SVXDASH_SITE"] = $site;
+  ksort($config);
+  file_put_contents($path, "<?php\nreturn " . var_export($config, true) . ";\n");
+  ' "${WEB_ROOT}/include/config.local.php" "${SITE_NAME}"
+fi
+
 echo "[4/4] A ajustar permissões e helper do painel"
 if id www-data >/dev/null 2>&1; then
   chown -R www-data:www-data "${WEB_ROOT}" "${STATE_DIR}"
@@ -105,6 +123,10 @@ find "${WEB_ROOT}" -type f -exec chmod 644 {} +
 chmod 775 "${STATE_DIR}"
 
 install -m 0755 "${TARGET_DIR}/install/dashboard-action-helper.sh" "${ACTION_BIN}"
+cat > "${DEFAULTS_FILE}" <<DEFAULTS
+SVXLINK_SERVICE="${SVXLINK_SERVICE}"
+DEFAULTS
+chmod 0644 "${DEFAULTS_FILE}"
 if id www-data >/dev/null 2>&1; then
   cat > "${SUDOERS_FILE}" <<SUDOERS
 www-data ALL=(root) NOPASSWD: ${ACTION_BIN} restart-svxlink, ${ACTION_BIN} restart-system, ${ACTION_BIN} apt-update, ${ACTION_BIN} apt-upgrade, ${ACTION_BIN} meteo-now

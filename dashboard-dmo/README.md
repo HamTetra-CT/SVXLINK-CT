@@ -40,8 +40,8 @@ return [
     'SVXDASH_TIMEZONE' => 'Europe/Lisbon',
     'SVXDASH_VERSION' => 'V1.0',
     'SVXDASH_SITE' => 'CQ0Exxx',
-    'SVXDASH_TITLE' => 'Painel SVXLINK DMO',
-    'SVXDASH_SUBTITLE' => 'Ponte DMO MTM5400',
+    'SVXDASH_TITLE' => 'Painel SVXLINK',
+    'SVXDASH_SUBTITLE' => 'Motorola MTM5400',
     'SVXDASH_MTM_MODEL' => 'Motorola MTM5400',
     'SVXDASH_ADMIN_USER' => 'admin',
     'SVXDASH_ADMIN_PASSWORD' => 'hamtetra-ct',
@@ -51,6 +51,14 @@ return [
 ```
 
 A palavra-passe inicial é `hamtetra-ct`. Altera no painel em `Administração` ou directamente em `/var/www/html/include/config.local.php`.
+
+O indicativo mostrado no topo vem de `SVXDASH_SITE`; por defeito é `CQ0Exxx`. O update do painel força este valor por defeito, a menos que corras com `FORCE_SITE=0`.
+
+O botão `Reiniciar SvxLink` usa `/usr/local/sbin/svxlink-ct-dashboard-action`. Se a unidade systemd não se chamar `svxlink`, define o nome em `/etc/default/svxlink-ct-dashboard`:
+
+```text
+SVXLINK_SERVICE="nome-da-unidade.service"
+```
 
 Também pode ser testado com variáveis de ambiente:
 

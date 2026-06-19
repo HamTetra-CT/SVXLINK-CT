@@ -70,10 +70,16 @@ Actualizar apenas o painel:
 curl -fsSL https://raw.githubusercontent.com/HamTetra-CT/SVXLINK-CT/main/install/update-dashboard-only.sh | sudo bash
 ```
 
+Se a unidade systemd do SvxLink tiver outro nome:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/HamTetra-CT/SVXLINK-CT/main/install/update-dashboard-only.sh | sudo SVXLINK_SERVICE=nome-da-unidade bash
+```
+
 Avisos meteorológicos IPMA:
 
 - Instala dependências com o instalador completo ou `sudo install/install-meteo-alerts.sh`.
-- Copia a chave Google Text-to-Speech para `/home/pi/chave.json`.
+- Copia a chave Google Text-to-Speech automaticamente com `CHAVE_JSON=/caminho/chave.json` ou deixa-a manualmente em `/home/pi/chave.json`.
 - Activa os avisos em `Administração` e escolhe o distrito/ilha IPMA.
 - O cron verifica a cada 5 minutos, mas só gera aviso quando passa o intervalo definido no painel.
 

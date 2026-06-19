@@ -6,7 +6,9 @@ function applyTheme(theme) {
   const button = document.getElementById('theme-toggle');
   if (button) {
     const label = selected === 'light' ? 'Modo noite' : 'Modo dia';
-    button.textContent = window.SVX_I18N ? window.SVX_I18N.t(label) : label;
+    const icon = selected === 'light' ? '☾' : '☀';
+    const text = window.SVX_I18N ? window.SVX_I18N.t(label) : label;
+    button.innerHTML = '<span class="theme-icon" aria-hidden="true">' + icon + '</span><span class="theme-label">' + text + '</span>';
   }
 }
 

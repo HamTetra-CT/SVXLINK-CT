@@ -99,15 +99,30 @@ function renderHardware(hardware, service) {
   const unavailable = window.SVX_I18N ? window.SVX_I18N.t('Indisponível') : 'Indisponível';
   text('hardware-load', hardware.load || unavailable);
   text('hardware-temp', hardware.temp || unavailable);
+  text('hardware-cpu-cores', hardware.cpu_cores || unavailable);
+  text('system-cpu-cores', hardware.cpu_cores || unavailable);
   if (hardware.memory) {
     text('memory-label', hardware.memory.label || unavailable);
-    text('memory-main', hardware.memory.label || unavailable);
+    text('memory-main', hardware.memory.used_of_total || hardware.memory.label || unavailable);
+    text('memory-total', hardware.memory.total || unavailable);
+    text('memory-used', hardware.memory.used || unavailable);
+    text('memory-free', hardware.memory.free || unavailable);
+    text('memory-available', hardware.memory.available || unavailable);
+    text('system-memory', hardware.memory.used_of_total || unavailable);
     const memoryBar = document.getElementById('memory-bar');
     if (memoryBar) memoryBar.style.width = Math.max(0, Math.min(100, Number(hardware.memory.percent) || 0)) + '%';
   }
-  text('disk-label', (hardware.disk_percent === undefined ? '0' : String(hardware.disk_percent)) + '%');
+  if (hardware.disk) {
+    text('disk-main', hardware.disk.used_of_total || unavailable);
+    text('disk-total', hardware.disk.total || unavailable);
+    text('disk-used', hardware.disk.used || unavailable);
+    text('disk-free', hardware.disk.free || unavailable);
+    text('system-disk', hardware.disk.used_of_total || unavailable);
+  }
+  const diskPercent = hardware.disk && hardware.disk.percent !== undefined ? hardware.disk.percent : hardware.disk_percent;
+  text('disk-label', (diskPercent === undefined ? '0' : String(diskPercent)) + '%');
   const diskBar = document.getElementById('disk-bar');
-  if (diskBar) diskBar.style.width = Math.max(0, Math.min(100, Number(hardware.disk_percent) || 0)) + '%';
+  if (diskBar) diskBar.style.width = Math.max(0, Math.min(100, Number(diskPercent) || 0)) + '%';
   if (service) {
     text('service-large', statusLabel(service.status));
     text('service-uptime', service.uptime || unavailable);

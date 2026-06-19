@@ -142,7 +142,25 @@ Depois copia a chave Google Text-to-Speech para:
 /home/pi/chave.json
 ```
 
+Ou corre o update/instalador com:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/HamTetra-CT/SVXLINK-CT/main/install/update-dashboard-only.sh | sudo CHAVE_JSON=/caminho/chave.json bash
+```
+
 No painel, entra em `Administração`, activa `Avisos meteorológicos`, escolhe o distrito/ilha IPMA e define o intervalo. O cron corre a cada 5 minutos mas respeita o intervalo escolhido.
+
+Se o botão `Reiniciar SvxLink` indicar que a unidade não existe, confirma o nome com `systemctl list-units '*svx*'` e define:
+
+```bash
+sudo nano /etc/default/svxlink-ct-dashboard
+```
+
+com:
+
+```text
+SVXLINK_SERVICE="nome-da-unidade.service"
+```
 
 ## Notas DMO MTM5400/MTM800E
 

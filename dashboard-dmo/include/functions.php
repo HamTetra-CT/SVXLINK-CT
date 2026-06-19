@@ -621,6 +621,24 @@ function format_power(float $watts): string
     return number_format($watts, $watts < 10 ? 1 : 0) . ' W';
 }
 
+function format_bytes_value(float $bytes): string
+{
+    if ($bytes <= 0) {
+        return 'Indisponível';
+    }
+
+    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    $value = $bytes;
+    $idx = 0;
+    while ($value >= 1024 && $idx < count($units) - 1) {
+        $value /= 1024;
+        $idx++;
+    }
+
+    $precision = $value >= 10 || $idx === 0 ? 0 : 1;
+    return number_format($value, $precision, ',', ' ') . ' ' . $units[$idx];
+}
+
 function radio_power_levels(): array
 {
     return [
@@ -966,7 +984,7 @@ function dashboard_admin_settings_state(): array
             'helper' => DASH_MAINT_HELPER,
         ],
         'settings' => [
-            'callsign' => (string)($logic['CALLSIGN'] ?? ($reflector['CALLSIGN'] ?? DASH_SITE)),
+            'callsign' => DASH_SITE,
             'tetra_mode' => (string)($logic['TETRA_MODE'] ?? 'DMO-MS'),
             'gssi' => (string)($logic['GSSI'] ?? '1'),
             'default_tg' => (string)($reflector['DEFAULT_TG'] ?? ''),
@@ -1450,13 +1468,40 @@ function mobile_presence(array $events, array $users): array
 function hardware_info(): array
 {
     $load = sys_getloadavg();
-    $memory = ['percent' => 0, 'label' => 'Indisponível'];
+    $memory = [
+        'percent' => 0,
+        'free_percent' => 0,
+        'available_percent' => 0,
+        'label' => 'Indisponível',
+        'total' => 'Indisponível',
+        'used' => 'Indisponível',
+        'free' => 'Indisponível',
+        'available' => 'Indisponível',
+        'used_of_total' => 'Indisponível',
+    ];
     if (is_readable('/proc/meminfo')) {
         $raw = (string)file_get_contents('/proc/meminfo');
         if (preg_match('/MemTotal:\s+(\d+)/', $raw, $total) && preg_match('/MemAvailable:\s+(\d+)/', $raw, $available)) {
-            $used = (int)$total[1] - (int)$available[1];
-            $pct = (int)round($used / max(1, (int)$total[1]) * 100);
-            $memory = ['percent' => $pct, 'label' => $pct . '%'];
+            $totalKb = (int)$total[1];
+            $availableKb = (int)$available[1];
+            $freeKb = preg_match('/MemFree:\s+(\d+)/', $raw, $freeMatch) ? (int)$freeMatch[1] : $availableKb;
+            $usedKb = max(0, $totalKb - $availableKb);
+            $pct = (int)round($usedKb / max(1, $totalKb) * 100);
+            $freePct = (int)round($freeKb / max(1, $totalKb) * 100);
+            $availablePct = (int)round($availableKb / max(1, $totalKb) * 100);
+            $totalLabel = format_bytes_value($totalKb * 1024);
+            $usedLabel = format_bytes_value($usedKb * 1024);
+            $memory = [
+                'percent' => $pct,
+                'free_percent' => $freePct,
+                'available_percent' => $availablePct,
+                'label' => $pct . '%',
+                'total' => $totalLabel,
+                'used' => $usedLabel,
+                'free' => format_bytes_value($freeKb * 1024),
+                'available' => format_bytes_value($availableKb * 1024),
+                'used_of_total' => $usedLabel . ' / ' . $totalLabel,
+            ];
         }
     }
 
@@ -1471,16 +1516,35 @@ function hardware_info(): array
     $total = @disk_total_space('/');
     $free = @disk_free_space('/');
     $diskPct = 0;
+    $disk = [
+        'percent' => 0,
+        'total' => 'Indisponível',
+        'used' => 'Indisponível',
+        'free' => 'Indisponível',
+        'used_of_total' => 'Indisponível',
+    ];
     if ($total !== false && $free !== false && $total > 0) {
-        $diskPct = (int)round((($total - $free) / $total) * 100);
+        $used = $total - $free;
+        $diskPct = (int)round(($used / $total) * 100);
+        $totalLabel = format_bytes_value((float)$total);
+        $usedLabel = format_bytes_value((float)$used);
+        $disk = [
+            'percent' => $diskPct,
+            'total' => $totalLabel,
+            'used' => $usedLabel,
+            'free' => format_bytes_value((float)$free),
+            'used_of_total' => $usedLabel . ' / ' . $totalLabel,
+        ];
     }
 
     return [
         'hostname' => gethostname() ?: php_uname('n'),
         'kernel' => php_uname('r'),
         'arch' => php_uname('m'),
+        'cpu_cores' => trim(command_output(['nproc'])) ?: 'Indisponível',
         'load' => $load !== false ? number_format((float)$load[0], 2) : 'Indisponível',
         'memory' => $memory,
+        'disk' => $disk,
         'disk_percent' => $diskPct,
         'temp' => $temp !== '' ? $temp : 'Indisponível',
     ];
@@ -1506,7 +1570,7 @@ function dashboard_data(): array
         'tetra' => [
             'model' => MTM_MODEL,
             'role' => DMO_ROLE,
-            'callsign' => $logic['CALLSIGN'] ?? DASH_SITE,
+            'callsign' => DASH_SITE,
             'mode' => $logic['TETRA_MODE'] ?? 'DMO-MS',
             'port' => $logic['PORT'] ?? '',
             'baud' => $logic['BAUD'] ?? '',

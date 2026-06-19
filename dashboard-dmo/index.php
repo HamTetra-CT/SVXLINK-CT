@@ -18,6 +18,8 @@ $latestEvent = $data['events'] ? $data['events'][count($data['events']) - 1] : n
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?php echo h($tetra['callsign']); ?> - <?php echo h($data['title']); ?></title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/favicon.png">
   <link rel="stylesheet" href="assets/app.css">
 </head>
 <body>
@@ -81,10 +83,23 @@ $latestEvent = $data['events'] ? $data['events'][count($data['events']) - 1] : n
         <div class="panel-title panel-bar">Estado do equipamento</div>
         <div class="meter"><span>Carga</span><strong id="hardware-load"><?php echo h($hardware['load']); ?></strong></div>
         <div class="meter"><span>Temp. CPU</span><strong id="hardware-temp"><?php echo h($hardware['temp']); ?></strong></div>
-        <div class="meter"><span>RAM</span><strong id="memory-main"><?php echo h($hardware['memory']['label']); ?></strong></div>
+        <div class="meter"><span>Núcleos CPU</span><strong id="hardware-cpu-cores"><?php echo h($hardware['cpu_cores']); ?></strong></div>
+        <div class="meter"><span>RAM usada</span><strong id="memory-main"><?php echo h($hardware['memory']['used_of_total']); ?></strong></div>
         <div class="meter-bar"><span id="memory-bar" style="width: <?php echo (int)$hardware['memory']['percent']; ?>%"></span></div>
+        <div class="hardware-breakdown">
+          <div><span>Total</span><strong id="memory-total"><?php echo h($hardware['memory']['total']); ?></strong></div>
+          <div><span>Usada</span><strong id="memory-used"><?php echo h($hardware['memory']['used']); ?></strong></div>
+          <div><span>Livre</span><strong id="memory-free"><?php echo h($hardware['memory']['free']); ?></strong></div>
+          <div><span>Disponível</span><strong id="memory-available"><?php echo h($hardware['memory']['available']); ?></strong></div>
+        </div>
         <div class="meter-caption">Memória <span id="memory-label"><?php echo h($hardware['memory']['label']); ?></span></div>
+        <div class="meter"><span>Disco usado</span><strong id="disk-main"><?php echo h($hardware['disk']['used_of_total']); ?></strong></div>
         <div class="meter-bar disk"><span id="disk-bar" style="width: <?php echo (int)$hardware['disk_percent']; ?>%"></span></div>
+        <div class="hardware-breakdown">
+          <div><span>Total</span><strong id="disk-total"><?php echo h($hardware['disk']['total']); ?></strong></div>
+          <div><span>Usado</span><strong id="disk-used"><?php echo h($hardware['disk']['used']); ?></strong></div>
+          <div><span>Livre</span><strong id="disk-free"><?php echo h($hardware['disk']['free']); ?></strong></div>
+        </div>
         <div class="meter-caption">Disco <span id="disk-label"><?php echo h((string)$hardware['disk_percent']); ?>%</span></div>
       </article>
 
@@ -191,6 +206,9 @@ $latestEvent = $data['events'] ? $data['events'][count($data['events']) - 1] : n
             <div><dt>Nome</dt><dd><?php echo h($hardware['hostname']); ?></dd></div>
             <div><dt>Kernel</dt><dd><?php echo h($hardware['kernel']); ?></dd></div>
             <div><dt>Arquitectura</dt><dd><?php echo h($hardware['arch']); ?></dd></div>
+            <div><dt>Núcleos CPU</dt><dd id="system-cpu-cores"><?php echo h($hardware['cpu_cores']); ?></dd></div>
+            <div><dt>RAM</dt><dd id="system-memory"><?php echo h($hardware['memory']['used_of_total']); ?></dd></div>
+            <div><dt>Disco</dt><dd id="system-disk"><?php echo h($hardware['disk']['used_of_total']); ?></dd></div>
             <div><dt>SvxLink</dt><dd><?php echo h($service['uptime'] ?: 'Indisponível'); ?></dd></div>
           </dl>
         </article>

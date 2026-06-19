@@ -38,8 +38,8 @@ function dash_root_path(string $relative, string $default): string
 
 define('DASH_TIMEZONE', dash_config('SVXDASH_TIMEZONE', 'Europe/Lisbon'));
 define('DASH_VERSION', dash_config('SVXDASH_VERSION', 'V1.0'));
-define('DASH_TITLE', dash_config('SVXDASH_TITLE', 'Painel SVXLINK DMO'));
-define('DASH_SUBTITLE', dash_config('SVXDASH_SUBTITLE', 'Ponte DMO MTM5400'));
+define('DASH_TITLE', dash_config('SVXDASH_TITLE', 'Painel SVXLINK'));
+define('DASH_SUBTITLE', dash_config('SVXDASH_SUBTITLE', 'Motorola MTM5400'));
 define('DASH_SITE', dash_config('SVXDASH_SITE', 'CQ0Exxx'));
 define('DASH_REFRESH_SECONDS', (int)dash_config('SVXDASH_REFRESH_SECONDS', '5'));
 define('DASH_LOG_LINES', (int)dash_config('SVXDASH_LOG_LINES', '900'));
