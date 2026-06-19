@@ -36,6 +36,7 @@ if [ -e "${WEB_ROOT}/index.php" ] || [ -e "${WEB_ROOT}/index.html" ]; then
   cp -a "${WEB_ROOT}/." "${BACKUP}/"
   echo "Existing web root backed up to ${BACKUP}"
 fi
+rm -f "${WEB_ROOT}/index.html" "${WEB_ROOT}/index.htm"
 
 echo "[3/6] Installing dashboard files"
 cp -a "${DASH_SRC}/." "${WEB_ROOT}/"
