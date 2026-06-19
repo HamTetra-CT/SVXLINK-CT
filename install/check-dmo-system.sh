@@ -26,6 +26,18 @@ for path in "${paths[@]}"; do
 done
 
 echo
+for key in SDS_PTY PEI_PTY; do
+  value="$(awk -F= -v key="${key}" '$1 == key {print $2}' /etc/svxlink/svxlink.d/TetraLogic.conf 2>/dev/null | tail -1)"
+  if [ -n "${value}" ] && [ -e "${value}" ]; then
+    echo "OK   ${key}=${value}"
+  elif [ -n "${value}" ]; then
+    echo "MISS ${key}=${value} configured but device not found"
+  else
+    echo "MISS ${key} not configured"
+  fi
+done
+
+echo
 if command -v svxlink >/dev/null 2>&1; then
   svxlink --version 2>&1 | head -1 || true
 else

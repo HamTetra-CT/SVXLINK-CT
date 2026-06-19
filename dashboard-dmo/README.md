@@ -6,7 +6,7 @@ Dashboard PHP leve para uma instalacao SvxLink com TetraLogic e Motorola MTM5400
 
 - Mostrar estado DMO: idle, RX local e TX para GSSI.
 - Ler `svxlink.conf`, `TetraLogic.conf`, `tetra_users.json`, `pei-init.json` e `/var/log/svxlink`.
-- Remover partes que nao interessam neste uso: EchoLink, TGs analogicos genericos, QRZ externo e parsing pesado de logs antigos.
+- Remover partes que nao interessam neste uso: bridges legadas, TGs analogicos genericos, QRZ externo e parsing pesado de logs antigos.
 - Evitar comandos shell para ler logs. O dashboard usa leitura parcial do ficheiro para manter o Raspberry responsivo.
 
 ## Instalar

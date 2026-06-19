@@ -28,6 +28,8 @@ $mobiles = $data['mobiles'];
     </div>
     <nav class="nav">
       <a class="active" href="index.php">Dashboard</a>
+      <a href="sds.php">SDS</a>
+      <a href="admin.php">Admin</a>
       <a href="logs.php">Logs</a>
     </nav>
     <div class="service-pill service-<?php echo h($service['status']); ?>">
@@ -194,6 +196,10 @@ $mobiles = $data['mobiles'];
         </article>
       </aside>
     </section>
+
+    <footer class="footer-credit">
+      SvxLink and TetraLogic credits remain with their original authors. This dashboard version: &lt;3 feita com amor pela HAMTETRA-CT.
+    </footer>
   </main>
 
   <script>

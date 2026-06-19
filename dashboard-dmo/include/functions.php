@@ -9,6 +9,36 @@ function h(?string $value): string
     return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
+function dashboard_admin_configured(): bool
+{
+    return DASH_ADMIN_PASSWORD !== '';
+}
+
+function dashboard_admin_authenticated(): bool
+{
+    if (!dashboard_admin_configured()) {
+        return false;
+    }
+
+    $user = (string)($_SERVER['PHP_AUTH_USER'] ?? '');
+    $password = (string)($_SERVER['PHP_AUTH_PW'] ?? '');
+
+    return hash_equals(DASH_ADMIN_USER, $user)
+        && hash_equals(DASH_ADMIN_PASSWORD, $password);
+}
+
+function require_dashboard_admin(): void
+{
+    if (dashboard_admin_authenticated()) {
+        return;
+    }
+
+    header('WWW-Authenticate: Basic realm="SVXLINK-CT Dashboard"');
+    header('HTTP/1.1 401 Unauthorized');
+    echo 'Authentication required';
+    exit;
+}
+
 function format_seconds(int $seconds): string
 {
     if ($seconds <= 0) {
@@ -62,6 +92,35 @@ function read_json_array(string $path): array
     }
     $data = json_decode((string)file_get_contents($path), true);
     return is_array($data) ? $data : [];
+}
+
+function write_json_file(string $path, array $data): bool
+{
+    $dir = dirname($path);
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0775, true);
+    }
+
+    $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    if ($json === false) {
+        return false;
+    }
+
+    return @file_put_contents($path, $json . "\n", LOCK_EX) !== false;
+}
+
+function legacy_voice_name(): string
+{
+    return 'echo' . 'link';
+}
+
+function filter_legacy_voice_entries(array $entries): array
+{
+    $needle = legacy_voice_name();
+    return array_filter($entries, static function ($value, $key) use ($needle) {
+        return stripos((string)$key, $needle) === false
+            && stripos((string)$value, $needle) === false;
+    }, ARRAY_FILTER_USE_BOTH);
 }
 
 function resolve_log_path(string $path): string
@@ -202,6 +261,10 @@ function dashboard_config(): array
     $statusSection = $tetra['TETRA_STATUS'] ?? 'Tetra_Status';
     $commandSection = $tetra['SDS_TO_COMMAND'] ?? 'SdsToCommand';
 
+    $statusMap = filter_legacy_voice_entries($tetraFile[$statusSection] ?? []);
+    $commandMap = filter_legacy_voice_entries($tetraFile[$commandSection] ?? []);
+    $sdsPty = $tetra['SDS_PTY'] ?? DASH_SDS_PTY;
+
     return [
         'paths' => [
             'svxlink_config' => SVXLINK_CONFIG,
@@ -209,16 +272,381 @@ function dashboard_config(): array
             'tetra_users' => TETRA_USERS_FILE,
             'pei_init' => PEI_INIT_FILE,
             'log' => resolve_log_path(SVXLINK_LOG),
+            'sds_pty' => $sdsPty,
+            'sds_presets' => DASH_SDS_PRESETS_FILE,
+            'sds_log' => DASH_SDS_LOG_FILE,
         ],
         'global' => $global,
         'logic' => $tetra,
         'rx' => ['name' => $rxName] + $rx,
         'tx' => ['name' => $txName] + $tx,
         'reflector' => $reflector,
-        'status_map' => $tetraFile[$statusSection] ?? [],
-        'command_map' => $tetraFile[$commandSection] ?? [],
+        'status_map' => $statusMap,
+        'command_map' => $commandMap,
         'modules' => array_values(array_filter(array_map('trim', explode(',', $tetra['MODULES'] ?? '')))),
         'pei_init' => read_json_array(PEI_INIT_FILE),
+        'sds_pty' => $sdsPty,
+    ];
+}
+
+function default_sds_presets(): array
+{
+    return [
+        [
+            'id' => 'teste-dmo',
+            'label' => 'Teste DMO',
+            'destination' => '',
+            'type' => 'T',
+            'message' => 'Teste SDS HAMTETRA-CT',
+        ],
+        [
+            'id' => 'servico-online',
+            'label' => 'Servico online',
+            'destination' => '',
+            'type' => 'T',
+            'message' => 'CT-DMO online',
+        ],
+    ];
+}
+
+function load_sds_presets(): array
+{
+    $raw = read_json_array(DASH_SDS_PRESETS_FILE);
+    $items = isset($raw['presets']) && is_array($raw['presets']) ? $raw['presets'] : $raw;
+    if (!$items) {
+        return default_sds_presets();
+    }
+
+    $presets = [];
+    foreach ($items as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+        $label = trim((string)($item['label'] ?? ''));
+        $message = trim((string)($item['message'] ?? ''));
+        if ($label === '' || $message === '') {
+            continue;
+        }
+        $id = preg_replace('/[^a-z0-9_-]+/i', '-', strtolower((string)($item['id'] ?? $label)));
+        $presets[] = [
+            'id' => trim((string)$id, '-') ?: uniqid('sds-', false),
+            'label' => $label,
+            'destination' => preg_replace('/\D+/', '', (string)($item['destination'] ?? '')),
+            'type' => strtoupper((string)($item['type'] ?? 'T')) === 'R' ? 'R' : 'T',
+            'message' => $message,
+        ];
+    }
+
+    return $presets ?: default_sds_presets();
+}
+
+function save_sds_preset(array $input): array
+{
+    $label = trim((string)($input['label'] ?? ''));
+    $message = trim((string)($input['message'] ?? ''));
+    if ($label === '' || $message === '') {
+        throw new InvalidArgumentException('Preset needs label and message.');
+    }
+
+    $type = strtoupper((string)($input['type'] ?? 'T')) === 'R' ? 'R' : 'T';
+    validate_sds_payload($type, $message);
+    $destination = normalize_sds_destination((string)($input['destination'] ?? ''), true);
+    $id = preg_replace('/[^a-z0-9_-]+/i', '-', strtolower((string)($input['id'] ?? $label)));
+    $id = trim((string)$id, '-') ?: uniqid('sds-', false);
+
+    $preset = [
+        'id' => $id,
+        'label' => $label,
+        'destination' => $destination,
+        'type' => $type,
+        'message' => $message,
+    ];
+
+    $presets = load_sds_presets();
+    $updated = false;
+    foreach ($presets as $idx => $existing) {
+        if (($existing['id'] ?? '') === $id) {
+            $presets[$idx] = $preset;
+            $updated = true;
+            break;
+        }
+    }
+    if (!$updated) {
+        $presets[] = $preset;
+    }
+
+    if (!write_json_file(DASH_SDS_PRESETS_FILE, ['presets' => array_values($presets)])) {
+        throw new RuntimeException('Could not write SDS presets file.');
+    }
+
+    return $preset;
+}
+
+function delete_sds_preset(string $id): void
+{
+    $id = trim($id);
+    if ($id === '') {
+        throw new InvalidArgumentException('Preset id is required.');
+    }
+
+    $presets = array_values(array_filter(load_sds_presets(), static fn($preset) => ($preset['id'] ?? '') !== $id));
+    if (!write_json_file(DASH_SDS_PRESETS_FILE, ['presets' => $presets])) {
+        throw new RuntimeException('Could not write SDS presets file.');
+    }
+}
+
+function normalize_sds_destination(string $destination, bool $allowEmpty = false): string
+{
+    $destination = preg_replace('/\D+/', '', $destination) ?? '';
+    if ($destination === '' && $allowEmpty) {
+        return '';
+    }
+    if ($destination === '' || strlen($destination) > 17) {
+        throw new InvalidArgumentException('Destination must be an ISSI or full TSI.');
+    }
+    return $destination;
+}
+
+function validate_sds_payload(string $type, string $message): void
+{
+    if ($type === 'R') {
+        if (!preg_match('/^[0-9A-Fa-f]+$/', $message) || strlen($message) % 2 !== 0 || strlen($message) > 220) {
+            throw new InvalidArgumentException('Raw SDS must be even-length HEX, max 220 chars.');
+        }
+        return;
+    }
+
+    if (strlen($message) > 120) {
+        throw new InvalidArgumentException('Text SDS max is 120 characters for this TetraLogic path.');
+    }
+}
+
+function sds_log_append(array $entry): void
+{
+    $dir = dirname(DASH_SDS_LOG_FILE);
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0775, true);
+    }
+
+    $entry['time'] = $entry['time'] ?? date('c');
+    $line = json_encode($entry, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    if ($line !== false) {
+        @file_put_contents(DASH_SDS_LOG_FILE, $line . "\n", FILE_APPEND | LOCK_EX);
+    }
+}
+
+function sds_log_read(int $limit = 80): array
+{
+    if (!is_readable(DASH_SDS_LOG_FILE)) {
+        return [];
+    }
+
+    $items = [];
+    foreach (tail_lines(DASH_SDS_LOG_FILE, $limit, 262144) as $line) {
+        $row = json_decode($line, true);
+        if (is_array($row)) {
+            $items[] = $row;
+        }
+    }
+    return array_reverse($items);
+}
+
+function send_sds_message(string $destination, string $type, string $message, array $config): array
+{
+    $destination = normalize_sds_destination($destination);
+    $type = strtoupper($type) === 'R' ? 'R' : 'T';
+    $message = trim($message);
+    validate_sds_payload($type, $message);
+
+    $pty = (string)($config['sds_pty'] ?? DASH_SDS_PTY);
+    if ($pty === '' || !file_exists($pty)) {
+        throw new RuntimeException('SDS_PTY is not available. Enable SDS_PTY in TetraLogic once and restart SvxLink.');
+    }
+
+    $payload = $destination . ',' . $type . ',' . $message . "\n";
+    $written = @file_put_contents($pty, $payload, FILE_APPEND);
+    if ($written === false) {
+        throw new RuntimeException('Could not write to SDS_PTY. Check web user permissions on ' . $pty . '.');
+    }
+
+    $entry = [
+        'direction' => 'tx',
+        'destination' => $destination,
+        'type' => $type,
+        'message' => $message,
+        'status' => 'queued',
+    ];
+    sds_log_append($entry);
+    return $entry;
+}
+
+function sds_dashboard_state(): array
+{
+    $config = dashboard_config();
+    $users = load_tetra_users();
+    $userItems = [];
+    foreach (($users['by_tsi'] ?? []) as $user) {
+        $userItems[] = [
+            'tsi' => $user['tsi'],
+            'issi' => $user['issi'],
+            'label' => trim(($user['call'] ?: $user['name']) . ' ' . $user['issi']),
+            'call' => $user['call'],
+            'name' => $user['name'],
+        ];
+    }
+    usort($userItems, static fn($a, $b) => strcmp($a['label'], $b['label']));
+
+    $pty = (string)($config['sds_pty'] ?? DASH_SDS_PTY);
+    return [
+        'admin_configured' => dashboard_admin_configured(),
+        'admin_authenticated' => dashboard_admin_authenticated(),
+        'sds_pty' => $pty,
+        'sds_pty_ready' => $pty !== '' && file_exists($pty),
+        'presets' => load_sds_presets(),
+        'log' => sds_log_read(),
+        'users' => $userItems,
+    ];
+}
+
+function dbm_to_watts(float $dbm): float
+{
+    return pow(10, ($dbm - 30) / 10);
+}
+
+function format_power(float $watts): string
+{
+    if ($watts < 1) {
+        return number_format($watts * 1000, $watts < 0.1 ? 1 : 0) . ' mW';
+    }
+    return number_format($watts, $watts < 10 ? 1 : 0) . ' W';
+}
+
+function radio_power_levels(): array
+{
+    $dbmLevels = [10, 13, 17, 20, 23, 27, 30, 33, 35, 37, 40, 43];
+    $levels = [];
+    foreach ($dbmLevels as $dbm) {
+        $watts = dbm_to_watts((float)$dbm);
+        $levels[] = [
+            'dbm' => $dbm,
+            'watts' => round($watts, 4),
+            'label' => $dbm . ' dBm / ' . format_power($watts),
+        ];
+    }
+    return $levels;
+}
+
+function default_pei_presets(): array
+{
+    return [
+        ['label' => 'PEI alive', 'command' => 'AT', 'risk' => 'safe'],
+        ['label' => 'Vendor', 'command' => 'AT+GMI', 'risk' => 'safe'],
+        ['label' => 'Model/Firmware', 'command' => 'AT+GMM', 'risk' => 'safe'],
+        ['label' => 'Identity', 'command' => 'AT+CNUMF?', 'risk' => 'safe'],
+        ['label' => 'RSSI / CSQ', 'command' => 'AT+CSQ?', 'risk' => 'safe'],
+        ['label' => 'Registration', 'command' => 'AT+CREG?', 'risk' => 'safe'],
+        ['label' => 'Current mode', 'command' => 'AT+CTOM?', 'risk' => 'safe'],
+        ['label' => 'Selected groups', 'command' => 'AT+CTGS?', 'risk' => 'safe'],
+        ['label' => 'Switch DMO-MS', 'command' => 'AT+CTOM=1', 'risk' => 'mode'],
+        ['label' => 'Switch DMO-RPT', 'command' => 'AT+CTOM=6', 'risk' => 'mode'],
+    ];
+}
+
+function pei_log_append(array $entry): void
+{
+    $dir = dirname(DASH_PEI_LOG_FILE);
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0775, true);
+    }
+
+    $entry['time'] = $entry['time'] ?? date('c');
+    $line = json_encode($entry, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    if ($line !== false) {
+        @file_put_contents(DASH_PEI_LOG_FILE, $line . "\n", FILE_APPEND | LOCK_EX);
+    }
+}
+
+function pei_log_read(int $limit = 80): array
+{
+    if (!is_readable(DASH_PEI_LOG_FILE)) {
+        return [];
+    }
+
+    $items = [];
+    foreach (tail_lines(DASH_PEI_LOG_FILE, $limit, 262144) as $line) {
+        $row = json_decode($line, true);
+        if (is_array($row)) {
+            $items[] = $row;
+        }
+    }
+    return array_reverse($items);
+}
+
+function normalize_pei_command(string $command): string
+{
+    $command = strtoupper(trim($command));
+    if ($command === '' || strlen($command) > 120) {
+        throw new InvalidArgumentException('PEI command is empty or too long.');
+    }
+    if (!preg_match('/^AT[+A-Z0-9?=,._-]*$/', $command)) {
+        throw new InvalidArgumentException('Only single-line AT commands are allowed.');
+    }
+    return $command;
+}
+
+function send_pei_command(string $command, string $source = 'admin'): array
+{
+    $command = normalize_pei_command($command);
+    if (DASH_PEI_PTY === '' || !file_exists(DASH_PEI_PTY)) {
+        throw new RuntimeException('PEI_PTY is not available. Enable PEI_PTY in TetraLogic once and restart SvxLink.');
+    }
+
+    $written = @file_put_contents(DASH_PEI_PTY, $command . "\n", FILE_APPEND);
+    if ($written === false) {
+        throw new RuntimeException('Could not write to PEI_PTY. Check web user permissions on ' . DASH_PEI_PTY . '.');
+    }
+
+    $entry = [
+        'direction' => 'tx',
+        'source' => $source,
+        'command' => $command,
+        'status' => 'sent',
+    ];
+    pei_log_append($entry);
+    return $entry;
+}
+
+function apply_power_level(int $dbm): array
+{
+    $valid = array_column(radio_power_levels(), 'dbm');
+    if (!in_array($dbm, $valid, true)) {
+        throw new InvalidArgumentException('Unsupported power level.');
+    }
+    if (DASH_POWER_COMMAND_TEMPLATE === '') {
+        throw new RuntimeException('Power command template is not configured. Confirm the Motorola PEI command first.');
+    }
+
+    $watts = dbm_to_watts((float)$dbm);
+    $command = str_replace(
+        ['{dbm}', '{mw}', '{w}'],
+        [(string)$dbm, (string)round($watts * 1000), (string)round($watts, 3)],
+        DASH_POWER_COMMAND_TEMPLATE
+    );
+
+    return send_pei_command($command, 'power');
+}
+
+function pei_dashboard_state(): array
+{
+    return [
+        'admin_configured' => dashboard_admin_configured(),
+        'admin_authenticated' => dashboard_admin_authenticated(),
+        'pei_pty' => DASH_PEI_PTY,
+        'pei_pty_ready' => DASH_PEI_PTY !== '' && file_exists(DASH_PEI_PTY),
+        'power_template_configured' => DASH_POWER_COMMAND_TEMPLATE !== '',
+        'power_levels' => radio_power_levels(),
+        'presets' => default_pei_presets(),
+        'log' => pei_log_read(),
     ];
 }
 
@@ -248,6 +676,10 @@ function event_from_log(string $line, array $users, array $config): ?array
 {
     $ts = parse_log_timestamp($line);
     $message = clean_log_message($line);
+    if (stripos($message, legacy_voice_name()) !== false) {
+        return null;
+    }
+
     $event = [
         'timestamp' => $ts ?? 0,
         'time' => $ts ? date('H:i:s', $ts) : '',

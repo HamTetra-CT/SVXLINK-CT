@@ -38,6 +38,8 @@ $events = array_slice($events, 0, 160);
     </div>
     <nav class="nav">
       <a href="index.php">Dashboard</a>
+      <a href="sds.php">SDS</a>
+      <a href="admin.php">Admin</a>
       <a class="active" href="logs.php">Logs</a>
     </nav>
   </header>
@@ -93,6 +95,10 @@ $events = array_slice($events, 0, 160);
         </table>
       </div>
     </section>
+
+    <footer class="footer-credit">
+      SvxLink and TetraLogic credits remain with their original authors. This dashboard version: &lt;3 feita com amor pela HAMTETRA-CT.
+    </footer>
   </main>
 </body>
 </html>

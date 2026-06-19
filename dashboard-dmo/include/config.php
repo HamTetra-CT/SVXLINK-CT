@@ -66,3 +66,20 @@ define('SVXLINK_LOG', dash_config(
 
 define('MTM_MODEL', dash_config('SVXDASH_MTM_MODEL', 'Motorola MTM5400'));
 define('DMO_ROLE', dash_config('SVXDASH_DMO_ROLE', 'DMO repeater simulation'));
+define('DASH_ADMIN_USER', dash_config('SVXDASH_ADMIN_USER', 'admin'));
+define('DASH_ADMIN_PASSWORD', dash_config('SVXDASH_ADMIN_PASSWORD', ''));
+define('DASH_SDS_PTY', dash_config('SVXDASH_SDS_PTY', dash_root_path('/tmp/tetra_sds', '/tmp/tetra_sds')));
+define('DASH_SDS_PRESETS_FILE', dash_config(
+    'SVXDASH_SDS_PRESETS_FILE',
+    dash_root_path('/var/lib/svxlink-ct/sds-presets.json', '/var/lib/svxlink-ct/sds-presets.json')
+));
+define('DASH_SDS_LOG_FILE', dash_config(
+    'SVXDASH_SDS_LOG_FILE',
+    dash_root_path('/var/lib/svxlink-ct/sds-log.jsonl', '/var/lib/svxlink-ct/sds-log.jsonl')
+));
+define('DASH_PEI_PTY', dash_config('SVXDASH_PEI_PTY', dash_root_path('/tmp/pei_pty', '/tmp/pei_pty')));
+define('DASH_PEI_LOG_FILE', dash_config(
+    'SVXDASH_PEI_LOG_FILE',
+    dash_root_path('/var/lib/svxlink-ct/pei-log.jsonl', '/var/lib/svxlink-ct/pei-log.jsonl')
+));
+define('DASH_POWER_COMMAND_TEMPLATE', dash_config('SVXDASH_POWER_COMMAND_TEMPLATE', ''));
