@@ -35,17 +35,22 @@ if ($action === 'pei_state') {
     json_out(pei_dashboard_state());
 }
 
-if (in_array($action, ['sds_send', 'sds_save_preset', 'sds_delete_preset', 'pei_send', 'pei_power'], true)) {
+if (in_array($action, ['sds_send', 'sds_save_preset', 'sds_delete_preset', 'pei_send', 'pei_power', 'admin_password'], true)) {
     if (!dashboard_admin_configured()) {
-        json_out(['ok' => false, 'error' => 'Admin password is not configured.'], 403);
+        json_out(['ok' => false, 'error' => 'A palavra-passe de administração não está configurada.'], 403);
     }
     if (!dashboard_admin_authenticated()) {
         header('WWW-Authenticate: Basic realm="SVXLINK-CT Dashboard"');
-        json_out(['ok' => false, 'error' => 'Authentication required.'], 401);
+        json_out(['ok' => false, 'error' => 'Autenticação necessária.'], 401);
     }
 
     try {
         $body = json_body();
+        if ($action === 'admin_password') {
+            update_admin_password((string)($body['password'] ?? ''));
+            json_out(['ok' => true]);
+        }
+
         if ($action === 'sds_send') {
             $config = dashboard_config();
             $entry = send_sds_message(

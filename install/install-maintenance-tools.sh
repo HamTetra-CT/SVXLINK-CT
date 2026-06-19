@@ -9,7 +9,7 @@ CRON_FILE="${CRON_FILE:-/etc/cron.d/svxlink-ct-users-update}"
 CRON_SCHEDULE="${CRON_SCHEDULE:-0 4 * * *}"
 
 if [ "$(id -u)" -ne 0 ]; then
-  echo "Run as root: sudo $0"
+  echo "Corre como root: sudo $0"
   exit 1
 fi
 
@@ -29,7 +29,7 @@ ${CRON_SCHEDULE} root ${USERS_BIN} --quiet >> /var/log/svxlink-ct-users-update.l
 CRON
 chmod 0644 "${CRON_FILE}"
 
-echo "Installed:"
+echo "Instalado:"
 echo "  ${MENU_BIN}"
 echo "  ${USERS_BIN}"
 echo "  ${CRON_FILE}"

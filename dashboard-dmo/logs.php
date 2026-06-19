@@ -6,6 +6,12 @@ $data = dashboard_data();
 $events = array_reverse($data['events']);
 $filter = strtolower(trim((string)($_GET['type'] ?? 'all')));
 $query = trim((string)($_GET['q'] ?? ''));
+$allEvents = $events;
+$counts = [];
+foreach ($allEvents as $event) {
+    $type = strtolower((string)$event['type']);
+    $counts[$type] = ($counts[$type] ?? 0) + 1;
+}
 
 if ($filter !== 'all') {
     $events = array_values(array_filter($events, static fn($event) => strtolower($event['type']) === $filter));
@@ -22,65 +28,90 @@ if ($query !== '') {
 $events = array_slice($events, 0, 160);
 ?>
 <!doctype html>
-<html lang="pt">
+<html lang="pt-PT">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Logs - <?php echo h($data['tetra']['callsign']); ?></title>
+  <title>Registos - <?php echo h($data['tetra']['callsign']); ?></title>
   <link rel="stylesheet" href="assets/app.css">
 </head>
 <body>
   <header class="topbar compact">
-    <div>
-      <div class="eyebrow"><?php echo h($data['site']); ?></div>
-      <h1>Logs</h1>
-      <p><?php echo h($data['paths']['log']); ?></p>
+    <div class="brand-lockup">
+      <img src="assets/hamtetra-ct-logo.jpg" alt="HAMTETRA-CT Portugal">
+      <div>
+        <div class="brand-title">SVXLINK-CT <span>by HamTetra-CT</span></div>
+        <h1>Registos</h1>
+        <p><?php echo h($data['paths']['log']); ?></p>
+      </div>
     </div>
     <nav class="nav">
-      <a href="index.php">Dashboard</a>
+      <a href="index.php">Painel</a>
       <a href="sds.php">SDS</a>
-      <a href="admin.php">Admin</a>
-      <a class="active" href="logs.php">Logs</a>
+      <a href="admin.php">Administração</a>
+      <a class="active" href="logs.php">Registos</a>
+      <a href="index.php#hardware">Hardware</a>
+      <select class="language-select" id="language-select" aria-label="Idioma">
+        <option value="pt">PT</option>
+        <option value="en">EN</option>
+        <option value="fr">FR</option>
+        <option value="es">ES</option>
+      </select>
+      <button class="theme-toggle" type="button" id="theme-toggle">Modo dia</button>
     </nav>
+    <div class="top-actions">
+      <div class="local-time">Hora local: <strong data-local-time><?php echo h(date('H:i:s')); ?></strong></div>
+    </div>
   </header>
 
   <main class="layout">
     <form class="toolbar" method="get">
       <label>
-        Type
+        Tipo
         <select name="type">
           <?php foreach (['all', 'rx', 'tx', 'idle', 'sds', 'pei', 'rssi', 'reg', 'reflector', 'warn', 'system'] as $type): ?>
-            <option value="<?php echo h($type); ?>" <?php echo $filter === $type ? 'selected' : ''; ?>><?php echo h(strtoupper($type)); ?></option>
+            <option value="<?php echo h($type); ?>" <?php echo $filter === $type ? 'selected' : ''; ?>><?php echo h(log_filter_label($type)); ?></option>
           <?php endforeach; ?>
         </select>
       </label>
       <label>
-        Search
-        <input type="search" name="q" value="<?php echo h($query); ?>" placeholder="ISSI, GSSI, TG, text">
+        Procurar
+        <input type="search" name="q" value="<?php echo h($query); ?>" placeholder="ISSI, GSSI, TG, texto">
       </label>
-      <button type="submit">Filter</button>
-      <a class="button secondary" href="logs.php">Reset</a>
+      <button type="submit">Filtrar</button>
+      <a class="button secondary" href="logs.php">Limpar</a>
+      <span class="live-badge"><span></span> Em directo</span>
     </form>
+
+    <section class="log-chips">
+      <?php foreach (['tx', 'rx', 'sds', 'pei', 'rssi', 'warn', 'system'] as $type): ?>
+        <a class="log-chip tag-<?php echo h($type); ?>" href="logs.php?type=<?php echo h($type); ?>">
+          <span><?php echo h(log_filter_label($type)); ?></span>
+          <strong><?php echo h((string)($counts[$type] ?? 0)); ?></strong>
+        </a>
+      <?php endforeach; ?>
+      <div class="log-total">Total: <?php echo h((string)count($allEvents)); ?> entradas</div>
+    </section>
 
     <section class="card activity-card">
       <div class="card-head">
-        <div class="panel-title">Parsed Events</div>
-        <span><?php echo count($events); ?> entries</span>
+        <div class="panel-title">Eventos interpretados</div>
+        <span><?php echo count($events); ?> entradas</span>
       </div>
       <div class="table-wrap">
         <table class="activity-table logs-table">
           <thead>
             <tr>
-              <th>Time</th>
-              <th>Type</th>
+              <th>Hora</th>
+              <th>Tipo</th>
               <th>ISSI</th>
               <th>GSSI/TG</th>
-              <th>Message</th>
+              <th>Mensagem</th>
             </tr>
           </thead>
           <tbody>
             <?php if (!$events): ?>
-              <tr><td colspan="5" class="empty">No events found</td></tr>
+              <tr><td colspan="5" class="empty">Sem eventos encontrados</td></tr>
             <?php endif; ?>
             <?php foreach ($events as $event): ?>
               <tr class="row-<?php echo h($event['type']); ?>">
@@ -96,9 +127,9 @@ $events = array_slice($events, 0, 160);
       </div>
     </section>
 
-    <footer class="footer-credit">
-      SvxLink and TetraLogic credits remain with their original authors. This dashboard version: &lt;3 feita com amor pela HAMTETRA-CT.
-    </footer>
+    <?php echo dashboard_footer(); ?>
   </main>
+  <script src="assets/theme.js"></script>
+  <script src="assets/i18n.js"></script>
 </body>
 </html>

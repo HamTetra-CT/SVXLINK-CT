@@ -9,12 +9,12 @@ TARGET_DIR="${TARGET_DIR:-${SOUNDS_ROOT}/pt_PT}"
 SET_DEFAULT_LANG="${SET_DEFAULT_LANG:-1}"
 
 if [ "$(id -u)" -ne 0 ]; then
-  echo "Run as root: sudo $0"
+  echo "Corre como root: sudo $0"
   exit 1
 fi
 
 if [ ! -d "${SOURCE_DIR}" ]; then
-  echo "Voice source not found: ${SOURCE_DIR}"
+  echo "Fonte das vozes não encontrada: ${SOURCE_DIR}"
   exit 1
 fi
 
@@ -22,7 +22,7 @@ mkdir -p "${SOUNDS_ROOT}"
 if [ -d "${TARGET_DIR}" ]; then
   backup="${TARGET_DIR}.backup.$(date +%Y%m%d-%H%M%S)"
   cp -a "${TARGET_DIR}" "${backup}"
-  echo "Existing pt_PT voices backed up to ${backup}"
+  echo "Vozes pt_PT existentes guardadas em ${backup}"
 fi
 
 rm -rf "${TARGET_DIR}"
@@ -57,8 +57,8 @@ set_default_lang() {
 if [ "${SET_DEFAULT_LANG}" = "1" ]; then
   set_default_lang /etc/svxlink/svxlink.conf GLOBAL
   set_default_lang /etc/svxlink/svxlink.d/TetraLogic.conf TetraLogic
-  echo "DEFAULT_LANG=pt_PT applied where config files exist."
-  echo "Restart SvxLink manually when you want the voice language change to take effect."
+  echo "DEFAULT_LANG=pt_PT aplicado nos ficheiros de configuração encontrados."
+  echo "Reinicia o SvxLink manualmente quando quiseres aplicar a mudança de idioma das vozes."
 fi
 
-echo "pt_PT voices installed in ${TARGET_DIR}"
+echo "Vozes pt_PT instaladas em ${TARGET_DIR}"

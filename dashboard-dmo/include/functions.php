@@ -9,6 +9,48 @@ function h(?string $value): string
     return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
+function dashboard_footer(): string
+{
+    return '<footer class="footer-credit">'
+        . '<span>Versão do painel ' . h(DASH_VERSION) . '.</span>'
+        . '<span>&lt;3 feita com amor pela <a href="' . h(DASH_HAMTETRA_URL) . '" target="_blank" rel="noopener">HAMTETRA-CT</a>.</span>'
+        . '<a class="telegram-link" href="' . h(DASH_TELEGRAM_URL) . '" target="_blank" rel="noopener" aria-label="Grupo Telegram HAMTETRA-CT">'
+        . '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.7 4.3 18.5 19.6c-.2 1-.8 1.2-1.6.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2L6.5 13.4 1.8 12c-1-.3-1-1 .2-1.5L20.3 3.4c.9-.3 1.7.2 1.4.9Z"/></svg>'
+        . '<span>Telegram</span></a>'
+        . '<span>Créditos SvxLink e TetraLogic mantidos pelos autores originais.</span>'
+        . '</footer>';
+}
+
+function service_status_label(string $status): string
+{
+    return [
+        'active' => 'ATIVO',
+        'inactive' => 'INATIVO',
+        'failed' => 'FALHA',
+        'connected' => 'LIGADO',
+        'down' => 'EM BAIXO',
+        'ready' => 'PRONTO',
+        'unknown' => 'DESCONHECIDO',
+    ][$status] ?? strtoupper($status);
+}
+
+function log_filter_label(string $type): string
+{
+    return [
+        'all' => 'TODOS',
+        'rx' => 'RX',
+        'tx' => 'TX',
+        'idle' => 'ESPERA',
+        'sds' => 'SDS',
+        'pei' => 'PEI',
+        'rssi' => 'RSSI',
+        'reg' => 'REGISTO',
+        'reflector' => 'REFLECTOR',
+        'warn' => 'ALERTAS',
+        'system' => 'SISTEMA',
+    ][$type] ?? strtoupper($type);
+}
+
 function dashboard_admin_configured(): bool
 {
     return DASH_ADMIN_PASSWORD !== '';
@@ -35,8 +77,45 @@ function require_dashboard_admin(): void
 
     header('WWW-Authenticate: Basic realm="SVXLINK-CT Dashboard"');
     header('HTTP/1.1 401 Unauthorized');
-    echo 'Authentication required';
+    echo 'Autenticação necessária';
     exit;
+}
+
+function write_local_dashboard_config(array $changes): void
+{
+    $current = [];
+    if (is_readable(DASH_LOCAL_CONFIG_PATH)) {
+        $loaded = require DASH_LOCAL_CONFIG_PATH;
+        if (is_array($loaded)) {
+            $current = $loaded;
+        }
+    }
+
+    foreach ($changes as $key => $value) {
+        $current[$key] = (string)$value;
+    }
+
+    ksort($current);
+    $body = "<?php\nreturn " . var_export($current, true) . ";\n";
+    $dir = dirname(DASH_LOCAL_CONFIG_PATH);
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0775, true);
+    }
+    if (@file_put_contents(DASH_LOCAL_CONFIG_PATH, $body, LOCK_EX) === false) {
+        throw new RuntimeException('Não foi possível gravar o ficheiro de configuração local.');
+    }
+}
+
+function update_admin_password(string $password): void
+{
+    $password = trim($password);
+    if (strlen($password) < 8) {
+        throw new InvalidArgumentException('A palavra-passe tem de ter pelo menos 8 caracteres.');
+    }
+    write_local_dashboard_config([
+        'SVXDASH_ADMIN_USER' => DASH_ADMIN_USER,
+        'SVXDASH_ADMIN_PASSWORD' => $password,
+    ]);
 }
 
 function format_seconds(int $seconds): string
@@ -345,7 +424,7 @@ function save_sds_preset(array $input): array
     $label = trim((string)($input['label'] ?? ''));
     $message = trim((string)($input['message'] ?? ''));
     if ($label === '' || $message === '') {
-        throw new InvalidArgumentException('Preset needs label and message.');
+        throw new InvalidArgumentException('O modelo precisa de nome e mensagem.');
     }
 
     $type = strtoupper((string)($input['type'] ?? 'T')) === 'R' ? 'R' : 'T';
@@ -376,7 +455,7 @@ function save_sds_preset(array $input): array
     }
 
     if (!write_json_file(DASH_SDS_PRESETS_FILE, ['presets' => array_values($presets)])) {
-        throw new RuntimeException('Could not write SDS presets file.');
+        throw new RuntimeException('Não foi possível gravar o ficheiro de modelos SDS.');
     }
 
     return $preset;
@@ -386,12 +465,12 @@ function delete_sds_preset(string $id): void
 {
     $id = trim($id);
     if ($id === '') {
-        throw new InvalidArgumentException('Preset id is required.');
+        throw new InvalidArgumentException('É necessário escolher um modelo.');
     }
 
     $presets = array_values(array_filter(load_sds_presets(), static fn($preset) => ($preset['id'] ?? '') !== $id));
     if (!write_json_file(DASH_SDS_PRESETS_FILE, ['presets' => $presets])) {
-        throw new RuntimeException('Could not write SDS presets file.');
+        throw new RuntimeException('Não foi possível gravar o ficheiro de modelos SDS.');
     }
 }
 
@@ -402,7 +481,7 @@ function normalize_sds_destination(string $destination, bool $allowEmpty = false
         return '';
     }
     if ($destination === '' || strlen($destination) > 17) {
-        throw new InvalidArgumentException('Destination must be an ISSI or full TSI.');
+        throw new InvalidArgumentException('O destino tem de ser um ISSI ou TSI completo.');
     }
     return $destination;
 }
@@ -411,13 +490,13 @@ function validate_sds_payload(string $type, string $message): void
 {
     if ($type === 'R') {
         if (!preg_match('/^[0-9A-Fa-f]+$/', $message) || strlen($message) % 2 !== 0 || strlen($message) > 220) {
-            throw new InvalidArgumentException('Raw SDS must be even-length HEX, max 220 chars.');
+            throw new InvalidArgumentException('O SDS HEX tem de ter tamanho par e no máximo 220 caracteres.');
         }
         return;
     }
 
     if (strlen($message) > 120) {
-        throw new InvalidArgumentException('Text SDS max is 120 characters for this TetraLogic path.');
+        throw new InvalidArgumentException('O SDS de texto está limitado a 120 caracteres neste caminho TetraLogic.');
     }
 }
 
@@ -460,13 +539,13 @@ function send_sds_message(string $destination, string $type, string $message, ar
 
     $pty = (string)($config['sds_pty'] ?? DASH_SDS_PTY);
     if ($pty === '' || !file_exists($pty)) {
-        throw new RuntimeException('SDS_PTY is not available. Enable SDS_PTY in TetraLogic once and restart SvxLink.');
+        throw new RuntimeException('O SDS_PTY não está disponível. Confirma o SDS_PTY no TetraLogic e reinicia o SvxLink uma vez.');
     }
 
     $payload = $destination . ',' . $type . ',' . $message . "\n";
     $written = @file_put_contents($pty, $payload, FILE_APPEND);
     if ($written === false) {
-        throw new RuntimeException('Could not write to SDS_PTY. Check web user permissions on ' . $pty . '.');
+        throw new RuntimeException('Não foi possível escrever no SDS_PTY. Confirma as permissões do utilizador web em ' . $pty . '.');
     }
 
     $entry = [
@@ -539,16 +618,16 @@ function radio_power_levels(): array
 function default_pei_presets(): array
 {
     return [
-        ['label' => 'PEI alive', 'command' => 'AT', 'risk' => 'safe'],
-        ['label' => 'Vendor', 'command' => 'AT+GMI', 'risk' => 'safe'],
-        ['label' => 'Model/Firmware', 'command' => 'AT+GMM', 'risk' => 'safe'],
-        ['label' => 'Identity', 'command' => 'AT+CNUMF?', 'risk' => 'safe'],
+        ['label' => 'PEI activo', 'command' => 'AT', 'risk' => 'safe'],
+        ['label' => 'Fabricante', 'command' => 'AT+GMI', 'risk' => 'safe'],
+        ['label' => 'Modelo/Firmware', 'command' => 'AT+GMM', 'risk' => 'safe'],
+        ['label' => 'Identidade', 'command' => 'AT+CNUMF?', 'risk' => 'safe'],
         ['label' => 'RSSI / CSQ', 'command' => 'AT+CSQ?', 'risk' => 'safe'],
-        ['label' => 'Registration', 'command' => 'AT+CREG?', 'risk' => 'safe'],
-        ['label' => 'Current mode', 'command' => 'AT+CTOM?', 'risk' => 'safe'],
-        ['label' => 'Selected groups', 'command' => 'AT+CTGS?', 'risk' => 'safe'],
-        ['label' => 'Switch DMO-MS', 'command' => 'AT+CTOM=1', 'risk' => 'mode'],
-        ['label' => 'Switch DMO-RPT', 'command' => 'AT+CTOM=6', 'risk' => 'mode'],
+        ['label' => 'Registo', 'command' => 'AT+CREG?', 'risk' => 'safe'],
+        ['label' => 'Modo actual', 'command' => 'AT+CTOM?', 'risk' => 'safe'],
+        ['label' => 'Grupos seleccionados', 'command' => 'AT+CTGS?', 'risk' => 'safe'],
+        ['label' => 'Mudar para DMO-MS', 'command' => 'AT+CTOM=1', 'risk' => 'mode'],
+        ['label' => 'Mudar para DMO-RPT', 'command' => 'AT+CTOM=6', 'risk' => 'mode'],
     ];
 }
 
@@ -586,10 +665,10 @@ function normalize_pei_command(string $command): string
 {
     $command = strtoupper(trim($command));
     if ($command === '' || strlen($command) > 120) {
-        throw new InvalidArgumentException('PEI command is empty or too long.');
+        throw new InvalidArgumentException('O comando PEI está vazio ou é demasiado longo.');
     }
     if (!preg_match('/^AT[+A-Z0-9?=,._-]*$/', $command)) {
-        throw new InvalidArgumentException('Only single-line AT commands are allowed.');
+        throw new InvalidArgumentException('Só são permitidos comandos AT de uma linha.');
     }
     return $command;
 }
@@ -598,12 +677,12 @@ function send_pei_command(string $command, string $source = 'admin'): array
 {
     $command = normalize_pei_command($command);
     if (DASH_PEI_PTY === '' || !file_exists(DASH_PEI_PTY)) {
-        throw new RuntimeException('PEI_PTY is not available. Enable PEI_PTY in TetraLogic once and restart SvxLink.');
+        throw new RuntimeException('O PEI_PTY não está disponível. Confirma o PEI_PTY no TetraLogic e reinicia o SvxLink uma vez.');
     }
 
     $written = @file_put_contents(DASH_PEI_PTY, $command . "\n", FILE_APPEND);
     if ($written === false) {
-        throw new RuntimeException('Could not write to PEI_PTY. Check web user permissions on ' . DASH_PEI_PTY . '.');
+        throw new RuntimeException('Não foi possível escrever no PEI_PTY. Confirma as permissões do utilizador web em ' . DASH_PEI_PTY . '.');
     }
 
     $entry = [
@@ -620,10 +699,10 @@ function apply_power_level(int $dbm): array
 {
     $valid = array_column(radio_power_levels(), 'dbm');
     if (!in_array($dbm, $valid, true)) {
-        throw new InvalidArgumentException('Unsupported power level.');
+        throw new InvalidArgumentException('Nível de potência não suportado.');
     }
     if (DASH_POWER_COMMAND_TEMPLATE === '') {
-        throw new RuntimeException('Power command template is not configured. Confirm the Motorola PEI command first.');
+        throw new RuntimeException('O modelo de comando de potência ainda não está configurado. Confirma primeiro o comando PEI Motorola.');
     }
 
     $watts = dbm_to_watts((float)$dbm);
@@ -700,7 +779,7 @@ function event_from_log(string $line, array $users, array $config): ?array
         $event['issi'] = $m[1];
         $event['gssi'] = $m[2];
         $event['peer'] = user_label($m[1], $users);
-        $event['message'] = 'Groupcall from ' . $event['peer'] . ' to GSSI ' . $m[2];
+        $event['message'] = 'Chamada de grupo de ' . $event['peer'] . ' para GSSI ' . $m[2];
         return $event;
     }
 
@@ -708,7 +787,7 @@ function event_from_log(string $line, array $users, array $config): ?array
         $event['type'] = 'tx';
         $event['label'] = 'DMO TX';
         $event['gssi'] = $m[1];
-        $event['message'] = 'TX groupcall to GSSI ' . $m[1];
+        $event['message'] = 'TX chamada de grupo para GSSI ' . $m[1];
         return $event;
     }
 
@@ -757,7 +836,7 @@ function event_from_log(string $line, array $users, array $config): ?array
         $event['type'] = 'rssi';
         $event['label'] = 'RSSI';
         $event['rssi'] = (int)$m[1];
-        $event['message'] = 'Gateway RSSI ' . $m[1] . ' dBm';
+        $event['message'] = 'RSSI do gateway ' . $m[1] . ' dBm';
         return $event;
     }
     if (preg_match('/\+CSQ:\s*(\d+)/i', $message, $m)) {
@@ -765,7 +844,7 @@ function event_from_log(string $line, array $users, array $config): ?array
         $event['type'] = 'rssi';
         $event['label'] = 'RSSI';
         $event['rssi'] = $rssi;
-        $event['message'] = 'Gateway RSSI ' . $rssi . ' dBm';
+        $event['message'] = 'RSSI do gateway ' . $rssi . ' dBm';
         return $event;
     }
     if (stripos($message, 'PEI init finished') !== false) {
@@ -780,15 +859,15 @@ function event_from_log(string $line, array $users, array $config): ?array
     }
     if (preg_match('/State Sds received:\s*(\d+)/i', $message, $m)) {
         $event['type'] = 'sds';
-        $event['label'] = 'STATUS SDS';
-        $event['message'] = 'Status SDS ' . $m[1] . (($config['status_map'][$m[1]] ?? '') !== '' ? ': ' . $config['status_map'][$m[1]] : '');
+        $event['label'] = 'ESTADO SDS';
+        $event['message'] = 'Estado SDS ' . $m[1] . (($config['status_map'][$m[1]] ?? '') !== '' ? ': ' . $config['status_map'][$m[1]] : '');
         return $event;
     }
     if (preg_match('/Registration LA=(\d+),\s*MNI=(\d+),\s*state=(.+)$/i', $message, $m)) {
         $event['type'] = 'reg';
         $event['label'] = 'REG';
         $event['reg_state'] = trim($m[3]);
-        $event['message'] = 'Registration ' . trim($m[3]) . ' LA ' . $m[1] . ' MNI ' . $m[2];
+        $event['message'] = 'Registo ' . trim($m[3]) . ' LA ' . $m[1] . ' MNI ' . $m[2];
         return $event;
     }
     if (preg_match('/SDS|Sds|CMGS|CTSDSR/i', $message)) {
@@ -803,17 +882,17 @@ function event_from_log(string $line, array $users, array $config): ?array
     }
     if (preg_match('/Disconnected|Could not look up host|timeout|refused|No route/i', $message)) {
         $event['type'] = 'warn';
-        $event['label'] = 'NET WARN';
+        $event['label'] = 'ALERTA REDE';
         return $event;
     }
     if (preg_match('/Distortion detected|ERROR|WARNING|failed|wrong/i', $message)) {
         $event['type'] = 'warn';
-        $event['label'] = stripos($message, 'Distortion detected') !== false ? 'AUDIO CLIP' : 'WARN';
+        $event['label'] = stripos($message, 'Distortion detected') !== false ? 'SAT. ÁUDIO' : 'ALERTA';
         return $event;
     }
     if (preg_match('/Started SvxLink|special TetraLogic|New Tetra mode/i', $message)) {
         $event['type'] = 'system';
-        $event['label'] = 'SYSTEM';
+        $event['label'] = 'SISTEMA';
         return $event;
     }
 
@@ -835,8 +914,8 @@ function load_events(array $config, array $users, int $limit = DASH_LOG_LINES): 
 function runtime_state(array $events, array $config): array
 {
     $state = 'idle';
-    $label = 'IDLE';
-    $description = 'Waiting for DMO activity';
+    $label = 'EM ESPERA';
+    $description = 'A aguardar actividade DMO';
     $lastGssi = (string)($config['logic']['GSSI'] ?? '');
     $lastIssi = '';
     $lastPeer = '';
@@ -849,7 +928,7 @@ function runtime_state(array $events, array $config): array
     foreach ($events as $event) {
         if ($event['type'] === 'warn') {
             $warnings++;
-            if ($event['label'] === 'AUDIO CLIP') {
+            if ($event['label'] === 'SAT. ÁUDIO') {
                 $audioClips++;
             }
             if (preg_match('/Could not look up host|timeout|refused|No route|Disconnected/i', $event['message'])) {
@@ -875,17 +954,17 @@ function runtime_state(array $events, array $config): array
         if ($event['type'] === 'rx') {
             $state = 'rx';
             $label = 'DMO RX';
-            $description = $lastPeer !== '' ? 'Receiving ' . $lastPeer . ' on GSSI ' . $lastGssi : 'Receiving local DMO groupcall';
+            $description = $lastPeer !== '' ? 'A receber ' . $lastPeer . ' no GSSI ' . $lastGssi : 'A receber chamada de grupo DMO local';
         }
         if ($event['type'] === 'tx') {
             $state = 'tx';
             $label = 'DMO TX';
-            $description = 'Transmitting to GSSI ' . ($lastGssi !== '' ? $lastGssi : ($config['logic']['GSSI'] ?? ''));
+            $description = 'A transmitir para o GSSI ' . ($lastGssi !== '' ? $lastGssi : ($config['logic']['GSSI'] ?? ''));
         }
         if ($event['type'] === 'idle') {
             $state = 'idle';
-            $label = 'IDLE';
-            $description = 'Waiting for DMO activity';
+            $label = 'EM ESPERA';
+            $description = 'A aguardar actividade DMO';
         }
     }
 
@@ -916,7 +995,7 @@ function mobile_presence(array $events, array $users): array
             $gatewayRssi = (int)$event['rssi'];
             if ($lastIssi !== '' && abs(((int)$event['timestamp']) - $lastActivityTs) <= 12) {
                 $mobiles[$lastIssi]['rssi'] = $gatewayRssi;
-                $mobiles[$lastIssi]['rssi_source'] = 'near RX';
+                $mobiles[$lastIssi]['rssi_source'] = 'perto do RX';
             }
             continue;
         }
@@ -961,15 +1040,15 @@ function mobile_presence(array $events, array $users): array
         'gateway_rssi' => $gatewayRssi,
         'items' => array_values(array_slice($mobiles, 0, 40, true)),
         'rssi_note' => $gatewayRssi === null
-            ? 'No RSSI in current log window'
-            : 'RSSI is gateway CSQ unless correlated near RX',
+            ? 'Sem RSSI nos registos recentes'
+            : 'RSSI do gateway; por terminal só quando correlacionado com RX',
     ];
 }
 
 function hardware_info(): array
 {
     $load = sys_getloadavg();
-    $memory = ['percent' => 0, 'label' => 'N/A'];
+    $memory = ['percent' => 0, 'label' => 'Indisponível'];
     if (is_readable('/proc/meminfo')) {
         $raw = (string)file_get_contents('/proc/meminfo');
         if (preg_match('/MemTotal:\s+(\d+)/', $raw, $total) && preg_match('/MemAvailable:\s+(\d+)/', $raw, $available)) {
@@ -998,10 +1077,10 @@ function hardware_info(): array
         'hostname' => gethostname() ?: php_uname('n'),
         'kernel' => php_uname('r'),
         'arch' => php_uname('m'),
-        'load' => $load !== false ? number_format((float)$load[0], 2) : 'N/A',
+        'load' => $load !== false ? number_format((float)$load[0], 2) : 'Indisponível',
         'memory' => $memory,
         'disk_percent' => $diskPct,
-        'temp' => $temp !== '' ? $temp : 'N/A',
+        'temp' => $temp !== '' ? $temp : 'Indisponível',
     ];
 }
 

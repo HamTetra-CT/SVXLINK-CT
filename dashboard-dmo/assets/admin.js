@@ -33,7 +33,7 @@ async function postApi(action, payload) {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data.ok === false) {
-    throw new Error(data.error || 'Request failed');
+    throw new Error(data.error || 'Pedido falhou');
   }
   return data;
 }
@@ -42,9 +42,9 @@ function renderPeiLog(log) {
   const body = byId('pei-log-body');
   if (!body) return;
   const items = Array.isArray(log) ? log : [];
-  byId('pei-log-count').textContent = String(items.length) + ' entries';
+  byId('pei-log-count').textContent = String(items.length) + ' entradas';
   if (!items.length) {
-    body.innerHTML = '<tr><td colspan="4" class="empty">No PEI commands sent from dashboard yet</td></tr>';
+    body.innerHTML = '<tr><td colspan="4" class="empty">Ainda não foram enviados comandos PEI pelo painel</td></tr>';
     return;
   }
   body.innerHTML = items.map((entry) => {
@@ -60,9 +60,9 @@ function renderPeiLog(log) {
 }
 
 async function sendCommand(command, statusId) {
-  statusText(statusId, 'Sending...', true);
+  statusText(statusId, 'A enviar...', true);
   const data = await postApi('pei_send', { command });
-  statusText(statusId, 'Command sent. Check SvxLink log for response.', true);
+  statusText(statusId, 'Comando enviado. Confirma a resposta no registo do SvxLink.', true);
   if (data.state) renderPeiLog(data.state.log);
 }
 
@@ -98,13 +98,36 @@ function bindPowerForm() {
   if (!form) return;
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    statusText('power-status', 'Applying...', true);
+    statusText('power-status', 'A aplicar...', true);
     try {
       const data = await postApi('pei_power', { dbm: Number(byId('power-dbm').value) });
-      statusText('power-status', 'Power command sent.', true);
+      statusText('power-status', 'Comando de potência enviado.', true);
       if (data.state) renderPeiLog(data.state.log);
     } catch (err) {
       statusText('power-status', err.message, false);
+    }
+  });
+}
+
+function bindPasswordForm() {
+  const form = byId('admin-password-form');
+  if (!form) return;
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const password = byId('admin-password').value;
+    const confirmation = byId('admin-password-confirm').value;
+    if (password !== confirmation) {
+      statusText('admin-password-status', 'As palavras-passe não coincidem.', false);
+      return;
+    }
+    statusText('admin-password-status', 'A guardar...', true);
+    try {
+      await postApi('admin_password', { password });
+      byId('admin-password').value = '';
+      byId('admin-password-confirm').value = '';
+      statusText('admin-password-status', 'Palavra-passe guardada. O navegador pode pedir novo início de sessão.', true);
+    } catch (err) {
+      statusText('admin-password-status', err.message, false);
     }
   });
 }
@@ -113,5 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
   bindPresetButtons();
   bindCommandForm();
   bindPowerForm();
+  bindPasswordForm();
   renderPeiLog(peiState.log || []);
 });

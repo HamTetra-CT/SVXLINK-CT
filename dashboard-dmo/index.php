@@ -10,9 +10,10 @@ $reflector = $data['reflector'];
 $hardware = $data['hardware'];
 $service = $data['service'];
 $mobiles = $data['mobiles'];
+$latestEvent = $data['events'] ? $data['events'][count($data['events']) - 1] : null;
 ?>
 <!doctype html>
-<html lang="pt">
+<html lang="pt-PT">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -21,27 +22,41 @@ $mobiles = $data['mobiles'];
 </head>
 <body>
   <header class="topbar">
-    <div>
-      <div class="eyebrow"><?php echo h($data['site']); ?></div>
-      <h1><?php echo h($tetra['callsign']); ?></h1>
-      <p><?php echo h($data['subtitle']); ?></p>
+    <div class="brand-lockup">
+      <img src="assets/hamtetra-ct-logo.jpg" alt="HAMTETRA-CT Portugal">
+      <div>
+        <div class="brand-title">SVXLINK-CT <span>by HamTetra-CT</span></div>
+        <h1><?php echo h($tetra['callsign']); ?></h1>
+        <p><?php echo h($data['subtitle']); ?></p>
+      </div>
     </div>
     <nav class="nav">
-      <a class="active" href="index.php">Dashboard</a>
+      <a class="active" href="index.php">Painel</a>
       <a href="sds.php">SDS</a>
-      <a href="admin.php">Admin</a>
-      <a href="logs.php">Logs</a>
+      <a href="admin.php">Administração</a>
+      <a href="logs.php">Registos</a>
+      <a href="#hardware">Hardware</a>
+      <select class="language-select" id="language-select" aria-label="Idioma">
+        <option value="pt">PT</option>
+        <option value="en">EN</option>
+        <option value="fr">FR</option>
+        <option value="es">ES</option>
+      </select>
+      <button class="theme-toggle" type="button" id="theme-toggle">Modo dia</button>
     </nav>
-    <div class="service-pill service-<?php echo h($service['status']); ?>">
-      <span></span>
-      <strong id="service-status"><?php echo h(strtoupper($service['status'])); ?></strong>
+    <div class="top-actions">
+      <div class="local-time">Hora local: <strong data-local-time><?php echo h(date('H:i:s')); ?></strong></div>
+      <div class="service-pill service-<?php echo h($service['status']); ?>">
+        <span></span>
+        <strong id="service-status"><?php echo h(service_status_label((string)$service['status'])); ?></strong>
+      </div>
     </div>
   </header>
 
   <main class="layout">
     <section class="state-panel state-<?php echo h($runtime['state']); ?>" id="state-panel">
       <div class="state-copy">
-        <div class="panel-title">DMO State</div>
+        <div class="panel-title">Estado DMO</div>
         <div class="state-label" id="state-label"><?php echo h($runtime['label']); ?></div>
         <div class="state-desc" id="state-desc"><?php echo h($runtime['description']); ?></div>
       </div>
@@ -54,26 +69,59 @@ $mobiles = $data['mobiles'];
         <div class="wave wave-b"></div>
       </div>
       <div class="state-metrics">
-        <div><span>Mode</span><strong id="tetra-mode"><?php echo h($tetra['mode']); ?></strong></div>
+        <div><span>Modo</span><strong id="tetra-mode"><?php echo h($tetra['mode']); ?></strong></div>
         <div><span>GSSI</span><strong id="runtime-gssi"><?php echo h($runtime['gssi'] ?: $tetra['gssi']); ?></strong></div>
         <div><span>ISSI</span><strong><?php echo h($tetra['issi']); ?></strong></div>
         <div><span>PEI</span><strong id="runtime-pei"><?php echo h(strtoupper($runtime['pei'])); ?></strong></div>
       </div>
     </section>
 
+    <section class="grid quick-grid" id="hardware">
+      <article class="card health-card">
+        <div class="panel-title">Saúde Raspberry/NUC</div>
+        <div class="meter"><span>Carga</span><strong id="hardware-load"><?php echo h($hardware['load']); ?></strong></div>
+        <div class="meter"><span>Temp. CPU</span><strong id="hardware-temp"><?php echo h($hardware['temp']); ?></strong></div>
+        <div class="meter-bar"><span id="memory-bar" style="width: <?php echo (int)$hardware['memory']['percent']; ?>%"></span></div>
+        <div class="meter-caption">Memória <span id="memory-label"><?php echo h($hardware['memory']['label']); ?></span></div>
+        <div class="meter-bar disk"><span id="disk-bar" style="width: <?php echo (int)$hardware['disk_percent']; ?>%"></span></div>
+        <div class="meter-caption">Disco <span id="disk-label"><?php echo h((string)$hardware['disk_percent']); ?>%</span></div>
+      </article>
+
+      <article class="card warning-card">
+        <div class="panel-title">Alertas áudio/rádio</div>
+        <div class="warning-count" id="warning-count"><?php echo h((string)$runtime['warnings']); ?></div>
+        <p><span id="audio-clips"><?php echo h((string)$runtime['audio_clips']); ?></span> eventos de saturação de áudio nos registos recentes</p>
+      </article>
+
+      <article class="card latest-card">
+        <div class="panel-title">Última mensagem rádio</div>
+        <div class="latest-message" id="latest-message"><?php echo h($latestEvent['message'] ?? 'Sem actividade recente'); ?></div>
+        <div class="latest-meta">
+          <span id="latest-time"><?php echo h($latestEvent['time'] ?? ''); ?></span>
+          <span id="latest-type"><?php echo h($latestEvent['label'] ?? ''); ?></span>
+        </div>
+      </article>
+
+      <article class="card service-card">
+        <div class="panel-title">Serviço SvxLink</div>
+        <div class="service-large" id="service-large"><?php echo h(service_status_label((string)$service['status'])); ?></div>
+        <p>Ligado há <span id="service-uptime"><?php echo h($service['uptime'] ?: 'Indisponível'); ?></span></p>
+      </article>
+    </section>
+
     <section class="grid cards">
       <article class="card">
         <div class="panel-title">MTM5400</div>
         <dl class="kv">
-          <div><dt>Radio</dt><dd><?php echo h($tetra['model']); ?></dd></div>
-          <div><dt>Port</dt><dd><?php echo h($tetra['port']); ?></dd></div>
+          <div><dt>Rádio</dt><dd><?php echo h($tetra['model']); ?></dd></div>
+          <div><dt>Porta</dt><dd><?php echo h($tetra['port']); ?></dd></div>
           <div><dt>Baud</dt><dd><?php echo h($tetra['baud']); ?></dd></div>
           <div><dt>MCC/MNC</dt><dd><?php echo h($tetra['mcc'] . '/' . $tetra['mnc']); ?></dd></div>
         </dl>
       </article>
 
       <article class="card">
-        <div class="panel-title">Audio And PTT</div>
+        <div class="panel-title">Áudio e PTT</div>
         <dl class="kv">
           <div><dt>RX</dt><dd><?php echo h($radio['rx_audio']); ?></dd></div>
           <div><dt>SQL</dt><dd><?php echo h($radio['sql_det']); ?></dd></div>
@@ -83,22 +131,22 @@ $mobiles = $data['mobiles'];
       </article>
 
       <article class="card">
-        <div class="panel-title">Reflector Bridge</div>
+        <div class="panel-title">Ligação ao refletor</div>
         <dl class="kv">
-          <div><dt>Status</dt><dd id="reflector-status"><?php echo h(strtoupper($runtime['reflector'])); ?></dd></div>
-          <div><dt>Callsign</dt><dd><?php echo h($reflector['callsign']); ?></dd></div>
-          <div><dt>Default TG</dt><dd><?php echo h($reflector['default_tg']); ?></dd></div>
-          <div><dt>Selected TG</dt><dd id="selected-tg"><?php echo h($runtime['selected_tg'] ?: 'None'); ?></dd></div>
+          <div><dt>Estado</dt><dd id="reflector-status"><?php echo h(service_status_label((string)$runtime['reflector'])); ?></dd></div>
+          <div><dt>Indicativo</dt><dd><?php echo h($reflector['callsign']); ?></dd></div>
+          <div><dt>TG predefinido</dt><dd><?php echo h($reflector['default_tg']); ?></dd></div>
+          <div><dt>TG seleccionado</dt><dd id="selected-tg"><?php echo h($runtime['selected_tg'] ?: 'Nenhum'); ?></dd></div>
         </dl>
       </article>
 
       <article class="card">
-        <div class="panel-title">SDS And Users</div>
+        <div class="panel-title">SDS e utilizadores</div>
         <dl class="kv">
-          <div><dt>Users</dt><dd><?php echo h((string)$tetra['users']); ?></dd></div>
-          <div><dt>Heard</dt><dd id="mobiles-count"><?php echo h((string)$mobiles['count']); ?></dd></div>
-          <div><dt>Status SDS</dt><dd><?php echo h((string)$tetra['status_count']); ?></dd></div>
-          <div><dt>Gateway RSSI</dt><dd id="gateway-rssi"><?php echo $mobiles['gateway_rssi'] !== null ? h((string)$mobiles['gateway_rssi']) . ' dBm' : 'N/A'; ?></dd></div>
+          <div><dt>Utilizadores</dt><dd><?php echo h((string)$tetra['users']); ?></dd></div>
+          <div><dt>Ouvidos</dt><dd id="mobiles-count"><?php echo h((string)$mobiles['count']); ?></dd></div>
+          <div><dt>Estados SDS</dt><dd><?php echo h((string)$tetra['status_count']); ?></dd></div>
+          <div><dt>RSSI gateway</dt><dd id="gateway-rssi"><?php echo $mobiles['gateway_rssi'] !== null ? h((string)$mobiles['gateway_rssi']) . ' dBm' : 'Indisponível'; ?></dd></div>
         </dl>
       </article>
     </section>
@@ -106,18 +154,18 @@ $mobiles = $data['mobiles'];
     <section class="grid main-grid">
       <article class="card activity-card">
         <div class="card-head">
-          <div class="panel-title">DMO Activity</div>
+          <div class="panel-title">Actividade DMO</div>
           <span id="last-refresh"><?php echo h(date('H:i:s')); ?></span>
         </div>
         <div class="table-wrap">
           <table class="activity-table">
             <thead>
               <tr>
-                <th>Time</th>
-                <th>Type</th>
-                <th>Peer</th>
+                <th>Hora</th>
+                <th>Tipo</th>
+                <th>Estação</th>
                 <th>GSSI/TG</th>
-                <th>Message</th>
+                <th>Mensagem</th>
               </tr>
             </thead>
             <tbody id="activity-body">
@@ -137,34 +185,18 @@ $mobiles = $data['mobiles'];
 
       <aside class="side-stack">
         <article class="card">
-          <div class="panel-title">System</div>
+          <div class="panel-title">Sistema</div>
           <dl class="kv">
-            <div><dt>Hostname</dt><dd><?php echo h($hardware['hostname']); ?></dd></div>
+            <div><dt>Nome</dt><dd><?php echo h($hardware['hostname']); ?></dd></div>
             <div><dt>Kernel</dt><dd><?php echo h($hardware['kernel']); ?></dd></div>
-            <div><dt>Arch</dt><dd><?php echo h($hardware['arch']); ?></dd></div>
-            <div><dt>SvxLink</dt><dd><?php echo h($service['uptime'] ?: 'N/A'); ?></dd></div>
+            <div><dt>Arquitectura</dt><dd><?php echo h($hardware['arch']); ?></dd></div>
+            <div><dt>SvxLink</dt><dd><?php echo h($service['uptime'] ?: 'Indisponível'); ?></dd></div>
           </dl>
         </article>
 
         <article class="card">
-          <div class="panel-title">Health</div>
-          <div class="meter"><span>Load</span><strong><?php echo h($hardware['load']); ?></strong></div>
-          <div class="meter"><span>CPU Temp</span><strong><?php echo h($hardware['temp']); ?></strong></div>
-          <div class="meter-bar"><span style="width: <?php echo (int)$hardware['memory']['percent']; ?>%"></span></div>
-          <div class="meter-caption">Memory <?php echo h($hardware['memory']['label']); ?></div>
-          <div class="meter-bar disk"><span style="width: <?php echo (int)$hardware['disk_percent']; ?>%"></span></div>
-          <div class="meter-caption">Disk <?php echo h((string)$hardware['disk_percent']); ?>%</div>
-        </article>
-
-        <article class="card warning-card">
-          <div class="panel-title">Warnings</div>
-          <div class="warning-count" id="warning-count"><?php echo h((string)$runtime['warnings']); ?></div>
-          <p><span id="audio-clips"><?php echo h((string)$runtime['audio_clips']); ?></span> audio clipping events in recent log window</p>
-        </article>
-
-        <article class="card">
           <div class="card-head">
-            <div class="panel-title">Mobiles</div>
+            <div class="panel-title">Terminais</div>
             <span id="mobiles-note"><?php echo h($mobiles['rssi_note']); ?></span>
           </div>
           <div class="mini-table-wrap">
@@ -172,13 +204,13 @@ $mobiles = $data['mobiles'];
               <thead>
                 <tr>
                   <th>ISSI</th>
-                  <th>Last</th>
+                  <th>Última vez</th>
                   <th>RSSI</th>
                 </tr>
               </thead>
               <tbody id="mobiles-body">
                 <?php if (!$mobiles['items']): ?>
-                  <tr><td colspan="3" class="empty">No mobiles seen</td></tr>
+                  <tr><td colspan="3" class="empty">Sem terminais observados</td></tr>
                 <?php endif; ?>
                 <?php foreach ($mobiles['items'] as $mobile): ?>
                   <tr>
@@ -187,7 +219,7 @@ $mobiles = $data['mobiles'];
                       <span><?php echo h($mobile['issi']); ?></span>
                     </td>
                     <td><?php echo h($mobile['last_seen']); ?></td>
-                    <td><?php echo $mobile['rssi'] !== null ? h((string)$mobile['rssi']) . ' dBm' : 'N/A'; ?></td>
+                    <td><?php echo $mobile['rssi'] !== null ? h((string)$mobile['rssi']) . ' dBm' : 'Indisponível'; ?></td>
                   </tr>
                 <?php endforeach; ?>
               </tbody>
@@ -197,9 +229,7 @@ $mobiles = $data['mobiles'];
       </aside>
     </section>
 
-    <footer class="footer-credit">
-      SvxLink and TetraLogic credits remain with their original authors. This dashboard version: &lt;3 feita com amor pela HAMTETRA-CT.
-    </footer>
+    <?php echo dashboard_footer(); ?>
   </main>
 
   <script>
@@ -207,6 +237,8 @@ $mobiles = $data['mobiles'];
       refreshSeconds: <?php echo max(1, DASH_REFRESH_SECONDS); ?>
     };
   </script>
+  <script src="assets/theme.js"></script>
+  <script src="assets/i18n.js"></script>
   <script src="assets/app.js"></script>
 </body>
 </html>

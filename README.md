@@ -1,26 +1,31 @@
 # SVXLINK-CT
 
-DMO-focused SvxLink/TetraLogic tooling for MTM5400 experiments.
+Ferramentas SvxLink/TetraLogic focadas em DMO para testes com Motorola MTM5400/MTM800E.
 
-Current contents:
+Alvos suportados:
 
-- `dashboard-dmo/`: lightweight PHP dashboard tuned for DMO and MTM5400.
-- `sounds/pt_PT/`: Portuguese Portugal SvxLink voice prompts.
-- `menu/svxlink-ct-menu.sh`: local maintenance menu.
-- `install/install-svxlink-ct.sh`: all-in-one installer/update entrypoint.
-- `install/install-dmo-dashboard.sh`: installs Apache/PHP and publishes the dashboard to `/var/www/html`.
-- `install/update-dashboard-only.sh`: updates only the dashboard in `/var/www/html`.
-- `install/update-tetra-users.sh`: atomically updates `/etc/svxlink/tetra_users.json` without restarting SvxLink.
-- `install/check-dmo-system.sh`: checks expected SvxLink/TetraLogic files.
-- `docs/INSTALL_DMO_STEP_BY_STEP.md`: recommended OS-first installation flow.
+- `amd64`/`x86_64`: NUC, mini-PC e computadores 64-bit.
+- `arm64`/`aarch64`: Raspberry Pi OS/Debian 64-bit.
 
-Recommended one-line workflow:
+Conteúdo:
+
+- `dashboard-dmo/`: painel PHP leve, afinado para DMO e MTM5400.
+- `sounds/pt_PT/`: vozes SvxLink em português de Portugal.
+- `menu/svxlink-ct-menu.sh`: menu local de manutenção.
+- `install/install-svxlink-ct.sh`: instalador/actualizador completo.
+- `install/install-dmo-dashboard.sh`: instala Apache/PHP e publica o painel em `/var/www/html`.
+- `install/update-dashboard-only.sh`: actualiza apenas o painel em `/var/www/html`.
+- `install/update-tetra-users.sh`: actualiza `/etc/svxlink/tetra_users.json` de forma atómica, sem reiniciar o SvxLink.
+- `install/check-dmo-system.sh`: verifica os ficheiros esperados de SvxLink/TetraLogic.
+- `docs/INSTALL_DMO_STEP_BY_STEP.md`: guia de instalação passo a passo.
+
+Instalação recomendada:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/HamTetra-CT/SVXLINK-CT/main/install/install-svxlink-ct.sh | sudo bash
 ```
 
-Manual workflow:
+Instalação manual:
 
 ```bash
 git clone git@github.com:HamTetra-CT/SVXLINK-CT.git
@@ -30,23 +35,29 @@ sudo install/install-maintenance-tools.sh
 sudo install/install-pt-voices.sh
 ```
 
-Maintenance menu after install:
+Menu de manutenção depois da instalação:
 
 ```bash
 sudo svxlink-ct
 ```
 
-Daily automatic job:
+Credenciais iniciais do painel de administração:
 
-- Runs every day at `04:00`.
-- Updates only `/etc/svxlink/tetra_users.json`.
-- Does not restart SvxLink.
-- Logs to `/var/log/svxlink-ct-users-update.log`.
+- Utilizador: `admin`
+- Palavra-passe: `hamtetra-ct`
+- Altera no painel em `Administração` ou directamente em `/var/www/html/include/config.local.php`.
 
-Dashboard-only update:
+Tarefa automática diária:
+
+- Corre todos os dias às `04:00`.
+- Actualiza apenas `/etc/svxlink/tetra_users.json`.
+- Não reinicia o SvxLink.
+- Regista em `/var/log/svxlink-ct-users-update.log`.
+
+Actualizar apenas o painel:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/HamTetra-CT/SVXLINK-CT/main/install/update-dashboard-only.sh | sudo bash
 ```
 
-The ISO/IMG route should come after the installer is stable, because NUC and Raspberry Pi need separate image builds.
+ISO/IMG deve ficar para uma fase posterior. Para já, o instalador é o caminho mais simples porque NUC e Raspberry Pi precisam de imagens diferentes.

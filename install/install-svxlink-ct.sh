@@ -11,9 +11,15 @@ INSTALL_MENU="${INSTALL_MENU:-1}"
 UPDATE_USERS_NOW="${UPDATE_USERS_NOW:-1}"
 
 if [ "$(id -u)" -ne 0 ]; then
-  echo "Run as root: sudo $0"
+  echo "Corre como root: sudo $0"
   exit 1
 fi
+
+ARCH="$(dpkg --print-architecture 2>/dev/null || uname -m)"
+case "${ARCH}" in
+  amd64|arm64|x86_64|aarch64) ;;
+  *) echo "Aviso: arquitectura não testada: ${ARCH}" ;;
+esac
 
 if command -v apt-get >/dev/null 2>&1; then
   export DEBIAN_FRONTEND=noninteractive
@@ -22,9 +28,11 @@ if command -v apt-get >/dev/null 2>&1; then
 fi
 
 if [ -d "${TARGET_DIR}/.git" ]; then
+  echo "A actualizar SVXLINK-CT em ${TARGET_DIR} (${ARCH})"
   git -C "${TARGET_DIR}" fetch --depth 1 origin "${BRANCH}"
   git -C "${TARGET_DIR}" checkout -B "${BRANCH}" "FETCH_HEAD"
 else
+  echo "A instalar SVXLINK-CT em ${TARGET_DIR} (${ARCH})"
   mkdir -p "$(dirname "${TARGET_DIR}")"
   git clone --depth 1 --branch "${BRANCH}" "${REPO_URL}" "${TARGET_DIR}"
 fi
@@ -46,7 +54,7 @@ if [ "${UPDATE_USERS_NOW}" = "1" ]; then
 fi
 
 echo
-echo "SVXLINK-CT install/update complete."
-echo "Dashboard: http://$(hostname -I 2>/dev/null | awk '{print $1}')/"
+echo "Instalação/actualização SVXLINK-CT concluída."
+echo "Painel: http://$(hostname -I 2>/dev/null | awk '{print $1}')/"
 echo "Menu: sudo svxlink-ct"
-echo "Daily users update: 04:00 via /etc/cron.d/svxlink-ct-users-update"
+echo "Actualização diária de utilizadores: 04:00 via /etc/cron.d/svxlink-ct-users-update"

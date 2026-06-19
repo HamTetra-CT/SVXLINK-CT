@@ -33,7 +33,7 @@ async function api(action, payload) {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data.ok === false) {
-    throw new Error(data.error || 'Request failed');
+    throw new Error(data.error || 'Pedido falhou');
   }
   return data;
 }
@@ -60,11 +60,11 @@ function renderPresets(presets) {
   const items = Array.isArray(presets) ? presets : [];
   $('sds-preset-count').textContent = String(items.length);
   if (!items.length) {
-    wrap.innerHTML = '<div class="empty">No presets</div>';
+    wrap.innerHTML = '<div class="empty">Sem modelos SDS</div>';
     return;
   }
   wrap.innerHTML = items.map((preset) => {
-    const meta = (preset.type === 'R' ? 'RAW' : 'TEXT') + ' ' + (preset.destination || 'sem destino');
+    const meta = (preset.type === 'R' ? 'HEX' : 'TEXTO') + ' ' + (preset.destination || 'sem destino');
     return '<button class="preset-item" type="button"' +
       ' data-id="' + esc(preset.id) + '"' +
       ' data-destination="' + esc(preset.destination) + '"' +
@@ -82,9 +82,9 @@ function renderLog(log) {
   const body = $('sds-log-body');
   if (!body) return;
   const items = Array.isArray(log) ? log : [];
-  $('sds-log-count').textContent = String(items.length) + ' entries';
+  $('sds-log-count').textContent = String(items.length) + ' entradas';
   if (!items.length) {
-    body.innerHTML = '<tr><td colspan="5" class="empty">No SDS sent from dashboard yet</td></tr>';
+    body.innerHTML = '<tr><td colspan="5" class="empty">Ainda não foram enviados SDS pelo painel</td></tr>';
     return;
   }
   body.innerHTML = items.map((entry) => {
@@ -112,7 +112,7 @@ function bindPresetButtons() {
       };
       fillSendForm(preset);
       fillPresetForm(preset);
-      setStatus('sds-send-status', 'Preset loaded.', true);
+      setStatus('sds-send-status', 'Modelo carregado.', true);
     });
   });
 }
@@ -122,14 +122,14 @@ function bindForms() {
   if (sendForm) {
     sendForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      setStatus('sds-send-status', 'Sending...', true);
+      setStatus('sds-send-status', 'A enviar...', true);
       try {
         const data = await api('sds_send', {
           destination: $('sds-destination').value,
           type: $('sds-type').value,
           message: $('sds-message').value
         });
-        setStatus('sds-send-status', 'SDS queued in TetraLogic.', true);
+        setStatus('sds-send-status', 'SDS colocado na fila do TetraLogic.', true);
         if (data.state) {
           renderLog(data.state.log);
         }
@@ -152,7 +152,7 @@ function bindForms() {
   if (presetForm) {
     presetForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      setStatus('sds-preset-status', 'Saving...', true);
+      setStatus('sds-preset-status', 'A guardar...', true);
       try {
         const data = await api('sds_save_preset', {
           id: $('preset-id').value,
@@ -161,7 +161,7 @@ function bindForms() {
           type: $('preset-type').value,
           message: $('preset-message').value
         });
-        setStatus('sds-preset-status', 'Preset saved.', true);
+        setStatus('sds-preset-status', 'Modelo guardado.', true);
         if (data.state) {
           renderPresets(data.state.presets);
         }
@@ -176,14 +176,14 @@ function bindForms() {
     del.addEventListener('click', async () => {
       const id = $('preset-id').value;
       if (!id) {
-        setStatus('sds-preset-status', 'Load a preset first.', false);
+        setStatus('sds-preset-status', 'Carrega primeiro um modelo.', false);
         return;
       }
-      setStatus('sds-preset-status', 'Deleting...', true);
+      setStatus('sds-preset-status', 'A apagar...', true);
       try {
         const data = await api('sds_delete_preset', { id });
         fillPresetForm({ id: '', label: '', destination: '', type: 'T', message: '' });
-        setStatus('sds-preset-status', 'Preset deleted.', true);
+        setStatus('sds-preset-status', 'Modelo apagado.', true);
         if (data.state) {
           renderPresets(data.state.presets);
         }

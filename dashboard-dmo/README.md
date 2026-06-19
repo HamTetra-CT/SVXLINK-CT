@@ -1,13 +1,13 @@
-# SVXLINK DMO Dashboard
+# Painel SVXLINK DMO
 
-Dashboard PHP leve para uma instalacao SvxLink com TetraLogic e Motorola MTM5400 em DMO.
+Painel PHP leve para uma instalação SvxLink com TetraLogic e Motorola MTM5400 em DMO.
 
 ## Objetivo
 
-- Mostrar estado DMO: idle, RX local e TX para GSSI.
+- Mostrar estado DMO: espera, RX local e TX para GSSI.
 - Ler `svxlink.conf`, `TetraLogic.conf`, `tetra_users.json`, `pei-init.json` e `/var/log/svxlink`.
-- Remover partes que nao interessam neste uso: bridges legadas, TGs analogicos genericos, QRZ externo e parsing pesado de logs antigos.
-- Evitar comandos shell para ler logs. O dashboard usa leitura parcial do ficheiro para manter o Raspberry responsivo.
+- Remover partes que não interessam neste uso: pontes legadas, TGs analógicos genéricos, QRZ externo e leitura pesada de registos antigos.
+- Evitar comandos shell para ler registos. O painel usa leitura parcial do ficheiro para manter o Raspberry responsivo.
 
 ## Instalar
 
@@ -18,7 +18,7 @@ sudo cp -a dashboard-dmo /var/www/html/dmo
 sudo chown -R www-data:www-data /var/www/html/dmo
 ```
 
-O utilizador do web server precisa de leitura em:
+O utilizador do servidor web precisa de leitura em:
 
 ```text
 /etc/svxlink/svxlink.conf
@@ -28,22 +28,27 @@ O utilizador do web server precisa de leitura em:
 /var/log/svxlink
 ```
 
-## Configuracao
+## Configuração
 
-Por omissao usa os caminhos normais do sistema. Para ajustar sem editar codigo, criar `include/config.local.php`:
+Por omissão usa os caminhos normais do sistema. Para ajustar sem editar código, cria `include/config.local.php`:
 
 ```php
 <?php
 return [
     'SVXDASH_TIMEZONE' => 'Europe/Lisbon',
+    'SVXDASH_VERSION' => 'V1.0',
     'SVXDASH_SITE' => 'CT DMO',
-    'SVXDASH_TITLE' => 'SVXLINK DMO Dashboard',
-    'SVXDASH_SUBTITLE' => 'MTM5400 DMO Gateway',
+    'SVXDASH_TITLE' => 'Painel SVXLINK DMO',
+    'SVXDASH_SUBTITLE' => 'Gateway DMO MTM5400',
     'SVXDASH_MTM_MODEL' => 'Motorola MTM5400',
+    'SVXDASH_ADMIN_USER' => 'admin',
+    'SVXDASH_ADMIN_PASSWORD' => 'hamtetra-ct',
 ];
 ```
 
-Tambem pode ser testado com variaveis de ambiente:
+A palavra-passe inicial é `hamtetra-ct`. Altera no painel em `Administração` ou directamente em `/var/www/html/include/config.local.php`.
+
+Também pode ser testado com variáveis de ambiente:
 
 ```bash
 SVXDASH_ROOT=/path/to/extracted-root php -S 127.0.0.1:8088 -t dashboard-dmo
@@ -51,7 +56,7 @@ SVXDASH_ROOT=/path/to/extracted-root php -S 127.0.0.1:8088 -t dashboard-dmo
 
 ## Endpoints
 
-- `index.php`: dashboard principal.
+- `index.php`: painel principal.
 - `logs.php`: eventos filtrados.
 - `api.php?action=dashboard`: estado completo em JSON.
 - `api.php?action=events`: eventos e estado runtime.
@@ -69,4 +74,4 @@ O parser foi afinado para as mensagens reais do TetraLogic:
 - `ReflectorLogic: Selecting TG #...`
 - `Rx1: Distortion detected`
 
-Isto evita depender de modulos que ja nao se usam neste cenario.
+Isto evita depender de módulos que já não se usam neste cenário.

@@ -23,7 +23,7 @@ log() {
 }
 
 if [ "$(id -u)" -ne 0 ]; then
-  echo "Run as root: sudo $0" >&2
+  echo "Corre como root: sudo $0" >&2
   exit 1
 fi
 
@@ -63,5 +63,5 @@ if [ -f "${TARGET_FILE}" ]; then
 fi
 
 install -m 0644 "${tmp}" "${TARGET_FILE}"
-log "Installed ${TARGET_FILE}"
-log "No SvxLink restart was performed."
+log "Instalado ${TARGET_FILE}"
+log "O SvxLink não foi reiniciado."

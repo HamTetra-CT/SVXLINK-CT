@@ -1,215 +1,115 @@
-# SVXLINK CT DMO install plan
+# Instalação SVXLINK-CT DMO
 
-This is the recommended first version: install the OS first, then run one installer from this repo.
+Este guia assume Debian 12/13, Ubuntu Server 24.04 ou Raspberry Pi OS 64-bit.
 
-Building a ready ISO/IMG is possible later, but it is not the best first step because:
+## Arquitecturas
 
-- Intel NUC uses normal Debian amd64 ISO boot.
-- Raspberry Pi uses ARM images and a different boot layout.
-- Every hardware target needs separate image testing.
-- A shell installer is faster to iterate while we are still tuning MTM5400, PEI, TetraLogic and dashboard behavior.
+- `amd64`/`x86_64`: NUC, mini-PC e computadores 64-bit.
+- `arm64`/`aarch64`: Raspberry Pi 4/5 com sistema 64-bit.
 
-## 1. Install the OS
+O painel é PHP/Apache e não depende de binários próprios por arquitectura. O SvxLink/TetraLogic e controladores de áudio/USB continuam dependentes do sistema onde forem compilados/instalados.
 
-NUC:
-
-- Debian 12 minimal, amd64.
-- Enable SSH during install.
-- Use a wired network while testing.
-
-Raspberry Pi:
-
-- Raspberry Pi OS Lite 64-bit when possible.
-- Enable SSH in Raspberry Pi Imager.
-- Use a stable power supply.
-
-## 2. Update base system
-
-```bash
-sudo apt update
-sudo apt -y full-upgrade
-sudo reboot
-```
-
-## 3. Clone the repository
-
-```bash
-sudo apt install -y git
-git clone git@github.com:HamTetra-CT/SVXLINK-CT.git
-cd SVXLINK-CT
-```
-
-If SSH is not configured on the target yet, use HTTPS for the first install:
-
-```bash
-git clone https://github.com/HamTetra-CT/SVXLINK-CT.git
-```
-
-## 4. Install dashboard
-
-```bash
-sudo install/install-dmo-dashboard.sh
-```
-
-The dashboard is installed directly into:
-
-```text
-/var/www/html
-```
-
-Open:
-
-```text
-http://radio-ip/
-```
-
-Recommended all-in-one install/update:
+## Instalação rápida
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/HamTetra-CT/SVXLINK-CT/main/install/install-svxlink-ct.sh | sudo bash
 ```
 
-This installs the dashboard, the maintenance menu, daily users update, and the `pt_PT` SvxLink voices.
+O instalador:
 
-## 5. Check SvxLink/TetraLogic files
+- instala Apache/PHP;
+- coloca o painel em `/var/www/html`;
+- instala o menu `sudo svxlink-ct`;
+- instala as vozes `pt_PT`;
+- configura `DEFAULT_LANG=pt_PT` quando encontra os ficheiros SvxLink;
+- configura `SDS_PTY=/tmp/tetra_sds` e `PEI_PTY=/tmp/pei_pty` no `TetraLogic.conf` quando o ficheiro existe;
+- instala a actualização diária de utilizadores às `04:00`.
 
-```bash
-sudo install/check-dmo-system.sh
-```
+Credenciais iniciais do painel:
 
-Expected files:
+- Utilizador: `admin`
+- Palavra-passe: `hamtetra-ct`
 
-```text
-/etc/svxlink/svxlink.conf
-/etc/svxlink/svxlink.d/TetraLogic.conf
-/etc/svxlink/tetra_users.json
-/etc/svxlink/pei-init.json
-/var/log/svxlink
-```
-
-## 6. Dashboard config overrides
-
-Edit:
+Altera a palavra-passe em `Administração` no painel ou em:
 
 ```text
 /var/www/html/include/config.local.php
 ```
 
-Useful values:
-
-```php
-<?php
-return [
-    'SVXDASH_TIMEZONE' => 'Europe/Lisbon',
-    'SVXDASH_SITE' => 'CT DMO',
-    'SVXDASH_SUBTITLE' => 'MTM5400 DMO Gateway',
-    'SVXDASH_ADMIN_USER' => 'admin',
-    'SVXDASH_ADMIN_PASSWORD' => 'change-me',
-    'SVXDASH_SDS_PTY' => '/tmp/tetra_sds',
-    'SVXDASH_PEI_PTY' => '/tmp/pei_pty',
-];
-```
-
-## 7. Update only the dashboard
-
-Use this when the radio/SvxLink side is already installed and you only want the latest dashboard:
+## Actualizar apenas o painel
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/HamTetra-CT/SVXLINK-CT/main/install/update-dashboard-only.sh | sudo bash
 ```
 
-This preserves `/var/www/html/include/config.local.php`.
+Este comando não mexe no SvxLink nem reinicia o serviço.
 
-## Daily contacts update
+## Menu local
 
-The all-in-one installer creates:
+Depois da instalação:
+
+```bash
+sudo svxlink-ct
+```
+
+O menu permite:
+
+- ver estado do sistema;
+- ver o registo do SvxLink;
+- actualizar o repositório;
+- actualizar apenas o painel;
+- actualizar `tetra_users.json` sem reiniciar;
+- instalar/actualizar vozes `pt_PT`;
+- editar `svxlink.conf`, `TetraLogic.conf` e `tetra_users.json`;
+- reiniciar o SvxLink manualmente quando for mesmo necessário.
+
+## Actualização diária de utilizadores
+
+O cron instalado em `/etc/cron.d/svxlink-ct-users-update` corre todos os dias às `04:00`.
+
+Só actualiza:
 
 ```text
-/etc/cron.d/svxlink-ct-users-update
+/etc/svxlink/tetra_users.json
 ```
 
-Default schedule:
+Não actualiza o painel, vozes, repositório ou binários SvxLink. Também não reinicia o SvxLink.
 
-```cron
-0 4 * * * root /usr/local/sbin/svxlink-ct-update-users --quiet >> /var/log/svxlink-ct-users-update.log 2>&1
-```
+## SDS e PEI
 
-Only `/etc/svxlink/tetra_users.json` is updated. The cron does not update the dashboard, voices, repository or SvxLink binaries.
-
-The file replacement is atomic and does not restart SvxLink. The dashboard reads the updated users file on each request. The current TetraLogic code appears to load user data at service start, so internal TetraLogic user labels may still require a manual restart unless we patch TetraLogic to reload the JSON at runtime.
-
-## 8. SDS and PEI admin
-
-For live SDS sending without restarting SvxLink, enable this once in `/etc/svxlink/svxlink.d/TetraLogic.conf`:
+Para envio SDS e comandos PEI sem reiniciar o serviço a cada alteração, o TetraLogic precisa destes canais:
 
 ```ini
 SDS_PTY=/tmp/tetra_sds
-```
-
-For live PEI commands from the admin dashboard, enable this once:
-
-```ini
 PEI_PTY=/tmp/pei_pty
 ```
 
-After adding those two lines, restart SvxLink once:
+O instalador tenta configurar isto automaticamente. Depois de activar estes valores pela primeira vez, reinicia o SvxLink uma vez para o TetraLogic criar os canais:
 
 ```bash
 sudo systemctl restart svxlink
 ```
 
-After that, sending SDS and PEI commands from the dashboard does not require restarting SvxLink.
+Depois disso, o painel consegue enviar SDS e comandos PEI pelo PTY sem reinícios constantes.
 
-## 9. Portuguese voices
+## Vozes pt_PT
 
-The all-in-one installer copies the voices to:
+O script das vozes instala os ficheiros em:
 
 ```text
 /usr/share/svxlink/sounds/pt_PT
 ```
 
-It also sets:
+Também tenta garantir:
 
 ```ini
 DEFAULT_LANG=pt_PT
 ```
 
-in `/etc/svxlink/svxlink.conf` and `/etc/svxlink/svxlink.d/TetraLogic.conf` when those files exist.
+em `svxlink.conf` e `TetraLogic.conf`.
 
-If you install the voices later:
+## Notas DMO MTM5400/MTM800E
 
-```bash
-sudo /opt/svxlink-ct/install/install-pt-voices.sh
-```
-
-Restart SvxLink manually when you want the voice language change to take effect.
-
-The admin dashboard includes a dBm to W/mW table. Applying power is intentionally disabled until the exact Motorola PEI command is confirmed. When confirmed, set a template in `config.local.php`, for example:
-
-```php
-'SVXDASH_POWER_COMMAND_TEMPLATE' => 'AT+CONFIRMED_COMMAND={dbm}',
-```
-
-Supported placeholders are `{dbm}`, `{mw}` and `{w}`.
-
-## RSSI and registered users
-
-Current TetraLogic can count configured users and users seen in recent DMO activity.
-
-Per-user RSSI is not guaranteed with the current code. The existing `AT+CSQ?` path measures the gateway radio RSSI and publishes `Rssi:info` for the gateway, not for each remote ISSI. The dashboard therefore shows:
-
-- mobiles heard in the recent log window
-- configured user count
-- gateway RSSI if present
-- per-mobile RSSI only when a RSSI line can be correlated close to an RX event
-
-For real per-user RSSI we probably need a TetraLogic change that logs or publishes a signal value together with the active ISSI during `handleCallBegin` or PEI RX events, if the MTM5400 exposes that information in DMO.
-
-## Later: prebuilt image
-
-After the installer is stable, make two image targets:
-
-- Debian amd64 image for NUC
-- Raspberry Pi OS arm64 image for Raspberry Pi
-
-Use the same installer inside both image builds so there is only one source of truth.
+- A leitura de RSSI por terminal depende do que o TetraLogic conseguir expor nos registos/PEI.
+- A potência RF aparece com tabela dBm/W/mW, mas a aplicação directa fica bloqueada até confirmarmos o comando PEI Motorola correcto.
+- Para produção, muda a palavra-passe inicial do painel.

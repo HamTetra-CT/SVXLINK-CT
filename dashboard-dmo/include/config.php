@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 $localConfig = [];
 $localConfigPath = __DIR__ . '/config.local.php';
+define('DASH_LOCAL_CONFIG_PATH', $localConfigPath);
 if (is_readable($localConfigPath)) {
     $loaded = require $localConfigPath;
     if (is_array($loaded)) {
@@ -36,11 +37,14 @@ function dash_root_path(string $relative, string $default): string
 }
 
 define('DASH_TIMEZONE', dash_config('SVXDASH_TIMEZONE', 'Europe/Lisbon'));
-define('DASH_TITLE', dash_config('SVXDASH_TITLE', 'SVXLINK DMO Dashboard'));
-define('DASH_SUBTITLE', dash_config('SVXDASH_SUBTITLE', 'MTM5400 DMO Gateway'));
+define('DASH_VERSION', dash_config('SVXDASH_VERSION', 'V1.0'));
+define('DASH_TITLE', dash_config('SVXDASH_TITLE', 'Painel SVXLINK DMO'));
+define('DASH_SUBTITLE', dash_config('SVXDASH_SUBTITLE', 'Gateway DMO MTM5400'));
 define('DASH_SITE', dash_config('SVXDASH_SITE', 'CT DMO'));
-define('DASH_REFRESH_SECONDS', (int)dash_config('SVXDASH_REFRESH_SECONDS', '2'));
+define('DASH_REFRESH_SECONDS', (int)dash_config('SVXDASH_REFRESH_SECONDS', '5'));
 define('DASH_LOG_LINES', (int)dash_config('SVXDASH_LOG_LINES', '900'));
+define('DASH_HAMTETRA_URL', dash_config('SVXDASH_HAMTETRA_URL', 'https://github.com/HamTetra-CT/'));
+define('DASH_TELEGRAM_URL', dash_config('SVXDASH_TELEGRAM_URL', 'https://t.me/+NPnwNiF8lLZlZmJk'));
 
 define('SVXLINK_SERVICE', dash_config('SVXDASH_SVXLINK_SERVICE', 'svxlink'));
 define('SVXLINK_CONFIG', dash_config(
@@ -65,9 +69,10 @@ define('SVXLINK_LOG', dash_config(
 ));
 
 define('MTM_MODEL', dash_config('SVXDASH_MTM_MODEL', 'Motorola MTM5400'));
-define('DMO_ROLE', dash_config('SVXDASH_DMO_ROLE', 'DMO repeater simulation'));
+define('DMO_ROLE', dash_config('SVXDASH_DMO_ROLE', 'simulação de repetidor DMO'));
 define('DASH_ADMIN_USER', dash_config('SVXDASH_ADMIN_USER', 'admin'));
-define('DASH_ADMIN_PASSWORD', dash_config('SVXDASH_ADMIN_PASSWORD', ''));
+define('DASH_DEFAULT_ADMIN_PASSWORD', dash_config('SVXDASH_DEFAULT_ADMIN_PASSWORD', 'hamtetra-ct'));
+define('DASH_ADMIN_PASSWORD', dash_config('SVXDASH_ADMIN_PASSWORD', DASH_DEFAULT_ADMIN_PASSWORD));
 define('DASH_SDS_PTY', dash_config('SVXDASH_SDS_PTY', dash_root_path('/tmp/tetra_sds', '/tmp/tetra_sds')));
 define('DASH_SDS_PRESETS_FILE', dash_config(
     'SVXDASH_SDS_PRESETS_FILE',

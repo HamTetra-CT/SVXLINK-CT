@@ -6,7 +6,7 @@ USERS_UPDATE="${USERS_UPDATE:-/usr/local/sbin/svxlink-ct-update-users}"
 
 need_whiptail() {
   if ! command -v whiptail >/dev/null 2>&1; then
-    echo "whiptail not found. Install with: sudo apt install whiptail"
+    echo "whiptail não encontrado. Instala com: sudo apt install whiptail"
     exit 1
   fi
 }
@@ -41,7 +41,7 @@ update_dashboard() {
 }
 
 update_users() {
-  run_in_shell "Atualizar tetra_users.json sem restart" "${USERS_UPDATE}"
+  run_in_shell "Atualizar tetra_users.json sem reiniciar" "${USERS_UPDATE}"
 }
 
 install_voices() {
@@ -90,7 +90,7 @@ while true; do
     2 "Ver logs SvxLink" \
     3 "Atualizar SVXLINK-CT repo" \
     4 "Atualizar apenas dashboard" \
-    5 "Atualizar tetra_users.json sem restart" \
+    5 "Atualizar tetra_users.json sem reiniciar" \
     6 "Instalar/atualizar vozes pt_PT" \
     7 "Editar svxlink.conf" \
     8 "Editar TetraLogic.conf" \
