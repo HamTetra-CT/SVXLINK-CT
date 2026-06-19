@@ -108,7 +108,7 @@ return [
     'SVXDASH_TIMEZONE' => '${TIMEZONE_PHP}',
     'SVXDASH_VERSION' => 'V1.0',
     'SVXDASH_SITE' => '${SITE_NAME_PHP}',
-    'SVXDASH_TITLE' => 'Painel SVXLINK',
+    'SVXDASH_TITLE' => 'SvxLink Dashboard TETRA',
     'SVXDASH_SUBTITLE' => 'Motorola MTM5400',
     'SVXDASH_REFRESH_SECONDS' => '5',
     'SVXDASH_MTM_MODEL' => 'Motorola MTM5400',

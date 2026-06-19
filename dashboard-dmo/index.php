@@ -17,17 +17,17 @@ $latestEvent = $data['events'] ? $data['events'][count($data['events']) - 1] : n
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><?php echo h($tetra['callsign']); ?> - <?php echo h($data['title']); ?></title>
-  <link rel="icon" type="image/png" href="assets/favicon.png">
-  <link rel="apple-touch-icon" href="assets/favicon.png">
-  <link rel="stylesheet" href="assets/app.css">
+  <title><?php echo h($data['title']); ?> - <?php echo h($tetra['callsign']); ?></title>
+  <link rel="icon" type="image/png" href="<?php echo asset_url('assets/favicon.png'); ?>">
+  <link rel="apple-touch-icon" href="<?php echo asset_url('assets/favicon.png'); ?>">
+  <link rel="stylesheet" href="<?php echo asset_url('assets/app.css'); ?>">
 </head>
 <body>
   <header class="topbar">
     <div class="brand-lockup">
       <img src="assets/hamtetra-ct-logo.jpg" alt="HAMTETRA-CT Portugal">
       <div>
-        <div class="brand-title">SVXLINK-CT <span>by HamTetra-CT</span></div>
+        <div class="brand-title">SvxLink Dashboard TETRA <span>by HamTetra-CT</span></div>
         <h1><?php echo h($tetra['callsign']); ?></h1>
         <p><?php echo h($data['subtitle']); ?></p>
       </div>
@@ -44,7 +44,7 @@ $latestEvent = $data['events'] ? $data['events'][count($data['events']) - 1] : n
         <option value="fr">FR</option>
         <option value="es">ES</option>
       </select>
-      <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Modo dia" title="Modo dia"><span class="theme-icon" aria-hidden="true">☀</span></button>
+      <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Alterar tema"><span class="theme-icon" aria-hidden="true">☀</span></button>
     </nav>
     <div class="top-actions">
       <div class="local-time">Hora local: <strong data-local-time><?php echo h(date('H:i:s')); ?></strong></div>
@@ -79,11 +79,22 @@ $latestEvent = $data['events'] ? $data['events'][count($data['events']) - 1] : n
     </section>
 
     <section class="grid quick-grid" id="hardware">
-      <article class="card health-card">
+      <article class="card health-card hardware-card">
         <div class="panel-title panel-bar">Estado do equipamento</div>
-        <div class="meter"><span>Carga</span><strong id="hardware-load"><?php echo h($hardware['load']); ?></strong></div>
-        <div class="meter"><span>Temp. CPU</span><strong id="hardware-temp"><?php echo h($hardware['temp']); ?></strong></div>
-        <div class="meter"><span>Núcleos CPU</span><strong id="hardware-cpu-cores"><?php echo h($hardware['cpu_cores']); ?></strong></div>
+        <dl class="hardware-info">
+          <div><dt>Hostname</dt><dd id="hardware-hostname"><?php echo h($hardware['hostname']); ?></dd></div>
+          <div><dt>IP local</dt><dd id="hardware-local-ip"><?php echo h($hardware['local_ip']); ?></dd></div>
+          <div><dt>Arquitectura</dt><dd id="hardware-arch"><?php echo h($hardware['arch']); ?></dd></div>
+          <div><dt>Kernel</dt><dd id="hardware-kernel"><?php echo h($hardware['kernel']); ?></dd></div>
+          <div><dt>Linux</dt><dd id="hardware-os"><?php echo h($hardware['os']); ?></dd></div>
+          <div><dt>SvxLink</dt><dd id="hardware-svxlink"><?php echo h($hardware['svxlink_version']); ?></dd></div>
+          <div><dt>Último arranque SvxLink</dt><dd id="hardware-svxlink-uptime"><?php echo h($service['uptime'] ?: 'Indisponível'); ?></dd></div>
+          <div><dt>Núcleos CPU</dt><dd id="hardware-cpu-cores"><?php echo h($hardware['cpu_cores']); ?></dd></div>
+          <div><dt>Temperatura CPU</dt><dd id="hardware-temp"><?php echo h($hardware['temp']); ?></dd></div>
+          <div><dt>Carga</dt><dd id="hardware-load"><?php echo h($hardware['load']); ?></dd></div>
+          <div><dt>CPU usada</dt><dd id="hardware-cpu-percent"><?php echo h((string)$hardware['cpu_percent']); ?>%</dd></div>
+        </dl>
+        <div class="meter-bar cpu"><span id="cpu-bar" style="width: <?php echo (int)$hardware['cpu_percent']; ?>%"></span></div>
         <div class="meter"><span>RAM usada</span><strong id="memory-main"><?php echo h($hardware['memory']['used_of_total']); ?></strong></div>
         <div class="meter-bar"><span id="memory-bar" style="width: <?php echo (int)$hardware['memory']['percent']; ?>%"></span></div>
         <div class="hardware-breakdown">
@@ -256,8 +267,8 @@ $latestEvent = $data['events'] ? $data['events'][count($data['events']) - 1] : n
       refreshSeconds: <?php echo max(1, DASH_REFRESH_SECONDS); ?>
     };
   </script>
-  <script src="assets/theme.js"></script>
-  <script src="assets/i18n.js"></script>
-  <script src="assets/app.js"></script>
+  <script src="<?php echo asset_url('assets/theme.js'); ?>"></script>
+  <script src="<?php echo asset_url('assets/i18n.js'); ?>"></script>
+  <script src="<?php echo asset_url('assets/app.js'); ?>"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-# Painel SVXLINK DMO
+# SvxLink Dashboard TETRA
 
 Painel PHP leve para uma instalação SvxLink com TetraLogic e Motorola MTM5400 em DMO.
 
@@ -40,7 +40,7 @@ return [
     'SVXDASH_TIMEZONE' => 'Europe/Lisbon',
     'SVXDASH_VERSION' => 'V1.0',
     'SVXDASH_SITE' => 'CQ0Exxx',
-    'SVXDASH_TITLE' => 'Painel SVXLINK',
+    'SVXDASH_TITLE' => 'SvxLink Dashboard TETRA',
     'SVXDASH_SUBTITLE' => 'Motorola MTM5400',
     'SVXDASH_MTM_MODEL' => 'Motorola MTM5400',
     'SVXDASH_ADMIN_USER' => 'admin',

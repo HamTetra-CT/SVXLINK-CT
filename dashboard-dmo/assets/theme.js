@@ -5,11 +5,11 @@ function applyTheme(theme) {
   document.documentElement.dataset.theme = selected;
   const button = document.getElementById('theme-toggle');
   if (button) {
-    const label = selected === 'light' ? 'Modo noite' : 'Modo dia';
+    const label = 'Alterar tema';
     const icon = selected === 'light' ? '☾' : '☀';
     const text = window.SVX_I18N ? window.SVX_I18N.t(label) : label;
     button.setAttribute('aria-label', text);
-    button.setAttribute('title', text);
+    button.removeAttribute('title');
     button.innerHTML = '<span class="theme-icon" aria-hidden="true">' + icon + '</span>';
   }
 }

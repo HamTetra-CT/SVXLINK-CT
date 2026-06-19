@@ -9,6 +9,14 @@ function h(?string $value): string
     return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
+function asset_url(string $path): string
+{
+    $clean = ltrim($path, '/');
+    $fullPath = dirname(__DIR__) . '/' . $clean;
+    $version = is_file($fullPath) ? (string)filemtime($fullPath) : DASH_VERSION;
+    return h($clean . '?v=' . rawurlencode($version));
+}
+
 function dashboard_footer(): string
 {
     return '<footer class="footer-credit">'
@@ -1468,6 +1476,38 @@ function mobile_presence(array $events, array $users): array
 function hardware_info(): array
 {
     $load = sys_getloadavg();
+    $cpuCores = trim(command_output(['nproc'])) ?: 'Indisponível';
+    $cpuPercent = 0;
+    if ($load !== false && is_numeric($cpuCores) && (int)$cpuCores > 0) {
+        $cpuPercent = (int)min(100, max(0, round(((float)$load[0] / (int)$cpuCores) * 100)));
+    }
+
+    $localIp = trim(command_output(['hostname', '-I']));
+    if ($localIp !== '') {
+        $parts = preg_split('/\s+/', $localIp);
+        $localIp = is_array($parts) ? (string)($parts[0] ?? '') : '';
+    }
+    if ($localIp === '') {
+        $localIp = 'Indisponível';
+    }
+
+    $osName = 'Indisponível';
+    if (is_readable('/etc/os-release')) {
+        $osRaw = (string)file_get_contents('/etc/os-release');
+        if (preg_match('/^PRETTY_NAME="?([^"\n]+)"?/m', $osRaw, $m)) {
+            $osName = trim($m[1]);
+        }
+    }
+
+    $svxlinkVersion = trim(command_output(['svxlink', '--version']));
+    if ($svxlinkVersion !== '') {
+        $lines = preg_split('/\R/', $svxlinkVersion);
+        $svxlinkVersion = is_array($lines) ? trim((string)($lines[0] ?? '')) : $svxlinkVersion;
+    }
+    if ($svxlinkVersion === '') {
+        $svxlinkVersion = 'Indisponível';
+    }
+
     $memory = [
         'percent' => 0,
         'free_percent' => 0,
@@ -1539,10 +1579,14 @@ function hardware_info(): array
 
     return [
         'hostname' => gethostname() ?: php_uname('n'),
+        'local_ip' => $localIp,
         'kernel' => php_uname('r'),
+        'os' => $osName,
         'arch' => php_uname('m'),
-        'cpu_cores' => trim(command_output(['nproc'])) ?: 'Indisponível',
+        'cpu_cores' => $cpuCores,
+        'cpu_percent' => $cpuPercent,
         'load' => $load !== false ? number_format((float)$load[0], 2) : 'Indisponível',
+        'svxlink_version' => $svxlinkVersion,
         'memory' => $memory,
         'disk' => $disk,
         'disk_percent' => $diskPct,

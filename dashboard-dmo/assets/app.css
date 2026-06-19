@@ -537,7 +537,7 @@ td:last-child {
   margin-top: 10px;
   overflow: hidden;
   border-radius: 8px;
-  background: #293139;
+  background: rgba(107, 138, 160, .28);
 }
 
 .meter-bar span {
@@ -548,6 +548,10 @@ td:last-child {
 
 .meter-bar.disk span {
   background: var(--amber);
+}
+
+.meter-bar.cpu span {
+  background: var(--green);
 }
 
 .warning-card p {
@@ -882,12 +886,12 @@ textarea {
 
 @media (max-width: 1120px) {
   .state-panel {
-    grid-template-columns: minmax(0, 1.2fr) 150px minmax(220px, 300px);
-    min-height: 170px;
+    grid-template-columns: minmax(0, 1.2fr) 120px minmax(220px, 300px);
+    min-height: 126px;
   }
   .radio-visual {
     display: block;
-    height: 105px;
+    height: 88px;
   }
   .cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -968,19 +972,19 @@ textarea {
 }
 
 html[data-theme="light"] {
-  --bg: #cae0ef;
-  --top: #cae0ef;
-  --panel: #d3e7fb;
-  --panel-2: #d7e1eb;
-  --line: #99aecd;
-  --text: #1f2e3a;
-  --muted: #1a2a3a;
+  --bg: #edf5fb;
+  --top: #f8fbff;
+  --panel: #ffffff;
+  --panel-2: #e4eef8;
+  --line: #9cb1c4;
+  --text: #102235;
+  --muted: #405c72;
   --green: #128957;
-  --cyan: #0077aa;
+  --cyan: #006f9f;
   --amber: #c97e00;
   --red: #c23b22;
-  --row-alt: #bdd0e2;
-  --hover: rgba(0, 119, 182, .12);
+  --row-alt: #f1f7fc;
+  --hover: rgba(0, 111, 159, .14);
 }
 
 html {
@@ -1073,10 +1077,16 @@ button,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  min-width: 40px;
+  width: 32px;
+  min-width: 32px;
+  max-width: 32px;
+  min-height: 32px;
+  flex: 0 0 32px;
   padding: 0;
   gap: 0;
+  overflow: hidden;
+  font-size: 0;
+  line-height: 1;
 }
 
 .theme-icon {
@@ -1098,15 +1108,15 @@ button,
 }
 
 .state-panel {
-  min-height: 170px;
-  grid-template-columns: minmax(0, 1.4fr) 180px minmax(250px, 360px);
+  min-height: 126px;
+  grid-template-columns: minmax(0, 1.35fr) 130px minmax(250px, 340px);
   gap: 12px;
-  padding: 14px;
+  padding: 12px;
   border-radius: 7px;
 }
 
 .state-label {
-  font-size: clamp(34px, 5vw, 56px);
+  font-size: clamp(32px, 4.2vw, 48px);
   color: var(--cyan);
 }
 
@@ -1115,7 +1125,7 @@ button,
 }
 
 .radio-visual {
-  height: 118px;
+  height: 92px;
 }
 
 .state-metrics {
@@ -1123,14 +1133,14 @@ button,
 }
 
 .state-metrics div {
-  min-height: 58px;
-  padding: 10px;
-  background: #0e151d;
+  min-height: 50px;
+  padding: 8px 10px;
+  background: var(--top);
 }
 
 .state-metrics strong {
   font-size: 17px;
-  color: #fff;
+  color: var(--text);
 }
 
 .grid {
@@ -1203,17 +1213,45 @@ button,
 .meter strong,
 .latest-message,
 .service-large {
-  color: #fff;
+  color: var(--text);
 }
 
 .meter {
   padding: 6px 12px;
 }
 
+.hardware-info {
+  margin: 8px 12px;
+  font-family: var(--font-data);
+}
+
+.hardware-info div {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(107, 138, 160, .18);
+}
+
+.hardware-info dt {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.hardware-info dd {
+  margin: 0;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
 .meter-bar {
   height: 7px;
   margin: 7px 12px 0;
-  background: #2a3a4a;
+  background: rgba(107, 138, 160, .28);
 }
 
 .meter-caption {
@@ -1241,7 +1279,7 @@ button,
 }
 
 .hardware-breakdown strong {
-  color: #fff;
+  color: var(--text);
   font-size: 12px;
   text-align: right;
 }
@@ -1282,14 +1320,14 @@ table {
 }
 
 th {
-  background: #0b2533;
-  color: #79bce5;
+  background: var(--panel-2);
+  color: var(--cyan);
   font-size: 10px;
   letter-spacing: .06em;
 }
 
 td {
-  color: #d8e8f8;
+  color: var(--text);
 }
 
 th,

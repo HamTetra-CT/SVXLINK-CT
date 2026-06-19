@@ -16,17 +16,17 @@ $adminReady = $sds['admin_configured'] && $sds['admin_authenticated'];
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SDS - <?php echo h($data['tetra']['callsign']); ?></title>
-  <link rel="icon" type="image/png" href="assets/favicon.png">
-  <link rel="apple-touch-icon" href="assets/favicon.png">
-  <link rel="stylesheet" href="assets/app.css">
+  <title>SDS - <?php echo h($data['title']); ?> - <?php echo h($data['tetra']['callsign']); ?></title>
+  <link rel="icon" type="image/png" href="<?php echo asset_url('assets/favicon.png'); ?>">
+  <link rel="apple-touch-icon" href="<?php echo asset_url('assets/favicon.png'); ?>">
+  <link rel="stylesheet" href="<?php echo asset_url('assets/app.css'); ?>">
 </head>
 <body data-page="sds">
   <header class="topbar compact">
     <div class="brand-lockup">
       <img src="assets/hamtetra-ct-logo.jpg" alt="HAMTETRA-CT Portugal">
       <div>
-        <div class="brand-title">SVXLINK-CT <span>by HamTetra-CT</span></div>
+        <div class="brand-title">SvxLink Dashboard TETRA <span>by HamTetra-CT</span></div>
         <h1>SDS</h1>
         <p>Envio e modelos via TetraLogic SDS_PTY</p>
       </div>
@@ -43,7 +43,7 @@ $adminReady = $sds['admin_configured'] && $sds['admin_authenticated'];
         <option value="fr">FR</option>
         <option value="es">ES</option>
       </select>
-      <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Modo dia" title="Modo dia"><span class="theme-icon" aria-hidden="true">☀</span></button>
+      <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Alterar tema"><span class="theme-icon" aria-hidden="true">☀</span></button>
     </nav>
     <div class="top-actions">
       <div class="local-time">Hora local: <strong data-local-time><?php echo h(date('H:i:s')); ?></strong></div>
@@ -205,8 +205,8 @@ $adminReady = $sds['admin_configured'] && $sds['admin_authenticated'];
   <script>
     window.DMO_SDS = <?php echo json_encode($sds, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
   </script>
-  <script src="assets/theme.js"></script>
-  <script src="assets/i18n.js"></script>
+  <script src="<?php echo asset_url('assets/theme.js'); ?>"></script>
+  <script src="<?php echo asset_url('assets/i18n.js'); ?>"></script>
   <script src="assets/sds.js"></script>
 </body>
 </html>

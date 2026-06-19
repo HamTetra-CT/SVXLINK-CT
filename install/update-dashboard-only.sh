@@ -7,6 +7,7 @@ TARGET_DIR="${TARGET_DIR:-/opt/svxlink-ct}"
 WEB_ROOT="${WEB_ROOT:-/var/www/html}"
 STATE_DIR="${STATE_DIR:-/var/lib/svxlink-ct}"
 SITE_NAME="${SITE_NAME:-CQ0Exxx}"
+DASH_TITLE_NAME="${DASH_TITLE_NAME:-SvxLink Dashboard TETRA}"
 FORCE_SITE="${FORCE_SITE:-1}"
 ACTION_BIN="${ACTION_BIN:-/usr/local/sbin/svxlink-ct-dashboard-action}"
 SUDOERS_FILE="${SUDOERS_FILE:-/etc/sudoers.d/svxlink-ct-dashboard}"
@@ -68,7 +69,7 @@ return [
     'SVXDASH_TIMEZONE' => 'Europe/Lisbon',
     'SVXDASH_VERSION' => 'V1.0',
     'SVXDASH_SITE' => 'CQ0Exxx',
-    'SVXDASH_TITLE' => 'Painel SVXLINK',
+    'SVXDASH_TITLE' => 'SvxLink Dashboard TETRA',
     'SVXDASH_SUBTITLE' => 'Motorola MTM5400',
     'SVXDASH_REFRESH_SECONDS' => '5',
     'SVXDASH_MTM_MODEL' => 'Motorola MTM5400',
@@ -98,14 +99,16 @@ if [ "${FORCE_SITE}" = "1" ] && command -v php >/dev/null 2>&1; then
   php -r '
   $path = $argv[1];
   $site = $argv[2];
+  $title = $argv[3];
   $config = is_readable($path) ? require $path : [];
   if (!is_array($config)) {
       $config = [];
   }
   $config["SVXDASH_SITE"] = $site;
+  $config["SVXDASH_TITLE"] = $title;
   ksort($config);
   file_put_contents($path, "<?php\nreturn " . var_export($config, true) . ";\n");
-  ' "${WEB_ROOT}/include/config.local.php" "${SITE_NAME}"
+  ' "${WEB_ROOT}/include/config.local.php" "${SITE_NAME}" "${DASH_TITLE_NAME}"
 fi
 
 echo "[4/4] A ajustar permissões e helper do painel"

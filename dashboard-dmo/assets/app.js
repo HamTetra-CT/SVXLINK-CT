@@ -97,10 +97,20 @@ function renderMobiles(mobiles) {
 function renderHardware(hardware, service) {
   if (!hardware) return;
   const unavailable = window.SVX_I18N ? window.SVX_I18N.t('Indisponível') : 'Indisponível';
+  text('hardware-hostname', hardware.hostname || unavailable);
+  text('hardware-local-ip', hardware.local_ip || unavailable);
+  text('hardware-arch', hardware.arch || unavailable);
+  text('hardware-kernel', hardware.kernel || unavailable);
+  text('hardware-os', hardware.os || unavailable);
+  text('hardware-svxlink', hardware.svxlink_version || unavailable);
   text('hardware-load', hardware.load || unavailable);
   text('hardware-temp', hardware.temp || unavailable);
   text('hardware-cpu-cores', hardware.cpu_cores || unavailable);
   text('system-cpu-cores', hardware.cpu_cores || unavailable);
+  const cpuPercent = Math.max(0, Math.min(100, Number(hardware.cpu_percent) || 0));
+  text('hardware-cpu-percent', cpuPercent + '%');
+  const cpuBar = document.getElementById('cpu-bar');
+  if (cpuBar) cpuBar.style.width = cpuPercent + '%';
   if (hardware.memory) {
     text('memory-label', hardware.memory.label || unavailable);
     text('memory-main', hardware.memory.used_of_total || hardware.memory.label || unavailable);
@@ -126,6 +136,7 @@ function renderHardware(hardware, service) {
   if (service) {
     text('service-large', statusLabel(service.status));
     text('service-uptime', service.uptime || unavailable);
+    text('hardware-svxlink-uptime', service.uptime || unavailable);
   }
 }
 

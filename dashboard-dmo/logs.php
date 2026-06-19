@@ -32,17 +32,17 @@ $events = array_slice($events, 0, 160);
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Registos - <?php echo h($data['tetra']['callsign']); ?></title>
-  <link rel="icon" type="image/png" href="assets/favicon.png">
-  <link rel="apple-touch-icon" href="assets/favicon.png">
-  <link rel="stylesheet" href="assets/app.css">
+  <title>Registos - <?php echo h($data['title']); ?> - <?php echo h($data['tetra']['callsign']); ?></title>
+  <link rel="icon" type="image/png" href="<?php echo asset_url('assets/favicon.png'); ?>">
+  <link rel="apple-touch-icon" href="<?php echo asset_url('assets/favicon.png'); ?>">
+  <link rel="stylesheet" href="<?php echo asset_url('assets/app.css'); ?>">
 </head>
 <body>
   <header class="topbar compact">
     <div class="brand-lockup">
       <img src="assets/hamtetra-ct-logo.jpg" alt="HAMTETRA-CT Portugal">
       <div>
-        <div class="brand-title">SVXLINK-CT <span>by HamTetra-CT</span></div>
+        <div class="brand-title">SvxLink Dashboard TETRA <span>by HamTetra-CT</span></div>
         <h1>Registos</h1>
         <p><?php echo h($data['paths']['log']); ?></p>
       </div>
@@ -59,7 +59,7 @@ $events = array_slice($events, 0, 160);
         <option value="fr">FR</option>
         <option value="es">ES</option>
       </select>
-      <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Modo dia" title="Modo dia"><span class="theme-icon" aria-hidden="true">☀</span></button>
+      <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Alterar tema"><span class="theme-icon" aria-hidden="true">☀</span></button>
     </nav>
     <div class="top-actions">
       <div class="local-time">Hora local: <strong data-local-time><?php echo h(date('H:i:s')); ?></strong></div>
@@ -131,7 +131,7 @@ $events = array_slice($events, 0, 160);
 
     <?php echo dashboard_footer(); ?>
   </main>
-  <script src="assets/theme.js"></script>
-  <script src="assets/i18n.js"></script>
+  <script src="<?php echo asset_url('assets/theme.js'); ?>"></script>
+  <script src="<?php echo asset_url('assets/i18n.js'); ?>"></script>
 </body>
 </html>
