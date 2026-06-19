@@ -1,0 +1,6 @@
+disk.img
+extracted-root/
+dashboard-dmo/include/config.local.php
+.DS_Store
+*.log
+*.pid
